@@ -19,19 +19,19 @@ class _Category {
 }
 
 const _categories = [
-  _Category('All',        '🍽️'),
-  _Category('Mexican',    '🌮'),
-  _Category('Burgers',    '🍔'),
-  _Category('Pizza',      '🍕'),
-  _Category('Sushi',      '🍣'),
-  _Category('Asian',      '🍜'),
-  _Category('Healthy',    '🥗'),
-  _Category('Chicken',    '🍗'),
-  _Category('Sandwiches', '🥪'),
-  _Category('Seafood',    '🦐'),
-  _Category('Desserts',   '🍰'),
-  _Category('Coffee',     '☕'),
-  _Category('Drinks',     '🧃'),
+  _Category('Todo',        '🍽️'),
+  _Category('Mexicana',    '🌮'),
+  _Category('Hamburguesas','🍔'),
+  _Category('Pizza',       '🍕'),
+  _Category('Sushi',       '🍣'),
+  _Category('Asiática',    '🍜'),
+  _Category('Saludable',   '🥗'),
+  _Category('Pollo',       '🍗'),
+  _Category('Sandwiches',  '🥪'),
+  _Category('Mariscos',    '🦐'),
+  _Category('Postres',     '🍰'),
+  _Category('Café',        '☕'),
+  _Category('Bebidas',     '🧃'),
 ];
 
 // ── Screen ────────────────────────────────────────────────────────────────────
@@ -49,9 +49,13 @@ class _CustomerEatsScreenState extends State<CustomerEatsScreen> {
   List<Restaurant> _all      = [];
   List<Restaurant> _filtered = [];
   Position? _userPos;
-  bool _loading     = true;
-  bool _locLoading  = true;
-  int  _catIndex    = 0;   // 0 = All
+  bool _loading    = true;
+  bool _locLoading = true;
+  int  _catIndex   = 0;
+
+  // City filter
+  String? _selectedCity;   // null = "Todas las ciudades"
+  List<String> _cities = [];
 
   @override
   void initState() {
@@ -66,10 +70,11 @@ class _CustomerEatsScreenState extends State<CustomerEatsScreen> {
     super.dispose();
   }
 
+  // ── Location ──────────────────────────────────────────────
   Future<void> _initLocation() async {
     try {
       bool enabled = await Geolocator.isLocationServiceEnabled();
-      if (!enabled) { setState(() => _locLoading = false); return; }
+      if (!enabled) { if (mounted) setState(() => _locLoading = false); return; }
 
       LocationPermission perm = await Geolocator.checkPermission();
       if (perm == LocationPermission.denied) {
@@ -77,7 +82,7 @@ class _CustomerEatsScreenState extends State<CustomerEatsScreen> {
       }
       if (perm == LocationPermission.deniedForever ||
           perm == LocationPermission.denied) {
-        setState(() => _locLoading = false);
+        if (mounted) setState(() => _locLoading = false);
         return;
       }
 
@@ -94,10 +99,48 @@ class _CustomerEatsScreenState extends State<CustomerEatsScreen> {
     _applyFilters();
   }
 
+  // ── Load restaurants ──────────────────────────────────────
   Future<void> _load() async {
     final list = await _fs.getActiveRestaurants();
-    if (mounted) setState(() { _all = list; _loading = false; });
+    if (!mounted) return;
+
+    // Extract unique cities (non-null, sorted)
+    final citySet = <String>{};
+    for (final r in list) {
+      if (r.city != null && r.city!.isNotEmpty) citySet.add(r.city!);
+    }
+    final cities = citySet.toList()..sort();
+
+    // Auto-select nearest city once we have GPS
+    String? autoCity;
+    if (_userPos != null && list.isNotEmpty) {
+      autoCity = _nearestCity(list, cities);
+    }
+
+    setState(() {
+      _all          = list;
+      _loading      = false;
+      _cities       = cities;
+      _selectedCity = autoCity;
+    });
     _applyFilters();
+  }
+
+  // ── Find nearest city by proximity ───────────────────────
+  String? _nearestCity(List<Restaurant> list, List<String> cities) {
+    if (_userPos == null || cities.isEmpty) return null;
+    final Map<String, double> cityDist = {};
+    for (final r in list) {
+      if (r.city == null || r.city!.isEmpty) continue;
+      final d = _distKm(r);
+      if (!cityDist.containsKey(r.city) || d < cityDist[r.city]!) {
+        cityDist[r.city!] = d;
+      }
+    }
+    if (cityDist.isEmpty) return null;
+    return cityDist.entries
+        .reduce((a, b) => a.value < b.value ? a : b)
+        .key;
   }
 
   // ── Haversine distance in km ──────────────────────────────
@@ -122,23 +165,89 @@ class _CustomerEatsScreenState extends State<CustomerEatsScreen> {
     return '${d.toStringAsFixed(1)} km';
   }
 
+  // ── Apply all filters ─────────────────────────────────────
   void _applyFilters() {
     if (!mounted) return;
     final q   = _searchCtrl.text.toLowerCase();
     final cat = _categories[_catIndex].label;
 
     List<Restaurant> list = _all.where((r) {
-      final matchCat  = cat == 'All' || (r.category ?? '').toLowerCase() == cat.toLowerCase();
+      // City filter
+      final matchCity = _selectedCity == null ||
+          (r.city ?? '').toLowerCase() == _selectedCity!.toLowerCase();
+      // Category filter
+      final matchCat = cat == 'Todo' ||
+          (r.category ?? '').toLowerCase() == cat.toLowerCase();
+      // Search filter
       final matchText = q.isEmpty ||
           r.name.toLowerCase().contains(q) ||
-          (r.description ?? '').toLowerCase().contains(q);
-      return matchCat && matchText;
+          (r.description ?? '').toLowerCase().contains(q) ||
+          (r.city ?? '').toLowerCase().contains(q);
+      return matchCity && matchCat && matchText;
     }).toList();
 
-    // Sort by distance (closest first), unknowns at the end
+    // Sort by distance
     list.sort((a, b) => _distKm(a).compareTo(_distKm(b)));
-
     setState(() => _filtered = list);
+  }
+
+  // ── City picker bottom sheet ──────────────────────────────
+  void _showCityPicker() {
+    showModalBottomSheet(
+      context: context,
+      backgroundColor: Colors.transparent,
+      builder: (_) => Container(
+        decoration: const BoxDecoration(
+          color: AppColors.surface,
+          borderRadius: BorderRadius.vertical(top: Radius.circular(24)),
+        ),
+        padding: const EdgeInsets.fromLTRB(20, 12, 20, 32),
+        child: Column(
+          mainAxisSize: MainAxisSize.min,
+          crossAxisAlignment: CrossAxisAlignment.start,
+          children: [
+            Center(
+              child: Container(
+                width: 40, height: 4,
+                decoration: BoxDecoration(
+                  color: AppColors.border,
+                  borderRadius: BorderRadius.circular(2),
+                ),
+              ),
+            ),
+            const SizedBox(height: 20),
+            const Text('Selecciona tu ciudad',
+                style: TextStyle(fontSize: 20, fontWeight: FontWeight.w800)),
+            const SizedBox(height: 16),
+            // "Todas" option
+            _CityOption(
+              city: 'Todas las ciudades',
+              icon: Icons.public_rounded,
+              selected: _selectedCity == null,
+              onTap: () {
+                setState(() => _selectedCity = null);
+                _applyFilters();
+                Navigator.pop(context);
+              },
+            ),
+            const SizedBox(height: 8),
+            ..._cities.map((city) => Padding(
+              padding: const EdgeInsets.only(bottom: 8),
+              child: _CityOption(
+                city: city,
+                icon: Icons.location_city_rounded,
+                selected: _selectedCity == city,
+                onTap: () {
+                  setState(() => _selectedCity = city);
+                  _applyFilters();
+                  Navigator.pop(context);
+                },
+              ),
+            )),
+          ],
+        ),
+      ),
+    );
   }
 
   @override
@@ -160,44 +269,38 @@ class _CustomerEatsScreenState extends State<CustomerEatsScreen> {
                     Row(
                       mainAxisAlignment: MainAxisAlignment.spaceBetween,
                       children: [
-                        Column(
-                          crossAxisAlignment: CrossAxisAlignment.start,
-                          children: [
-                            const Text('Order & Donate',
+                        // Location / city selector
+                        GestureDetector(
+                          onTap: _cities.isNotEmpty ? _showCityPicker : null,
+                          child: Row(
+                            children: [
+                              Icon(
+                                Icons.location_on_rounded,
+                                size: 16,
+                                color: _selectedCity != null
+                                    ? AppColors.primary
+                                    : AppColors.textSecondary,
+                              ),
+                              const SizedBox(width: 4),
+                              Text(
+                                _locLoading
+                                    ? 'Obteniendo ubicación...'
+                                    : _selectedCity ?? 'Todas las ciudades',
                                 style: TextStyle(
-                                    fontSize: 26,
-                                    fontWeight: FontWeight.w800,
-                                    height: 1.1)),
-                            const SizedBox(height: 4),
-                            Row(
-                              children: [
-                                Icon(
-                                  _userPos != null
-                                      ? Icons.location_on_rounded
-                                      : Icons.location_off_rounded,
-                                  size: 13,
-                                  color: _userPos != null
+                                  fontSize: 13,
+                                  fontWeight: FontWeight.w700,
+                                  color: _selectedCity != null
                                       ? AppColors.primary
-                                      : AppColors.textMuted,
+                                      : AppColors.textSecondary,
                                 ),
-                                const SizedBox(width: 3),
-                                Text(
-                                  _locLoading
-                                      ? 'Getting location...'
-                                      : _userPos != null
-                                          ? 'Sorted by distance'
-                                          : 'Location unavailable',
-                                  style: TextStyle(
-                                    fontSize: 12,
-                                    color: _userPos != null
-                                        ? AppColors.primary
-                                        : AppColors.textMuted,
-                                    fontWeight: FontWeight.w500,
-                                  ),
-                                ),
+                              ),
+                              if (_cities.isNotEmpty) ...[
+                                const SizedBox(width: 2),
+                                const Icon(Icons.keyboard_arrow_down_rounded,
+                                    size: 16, color: AppColors.primary),
                               ],
-                            ),
-                          ],
+                            ],
+                          ),
                         ),
                         // Cart icon
                         GestureDetector(
@@ -239,11 +342,18 @@ class _CustomerEatsScreenState extends State<CustomerEatsScreen> {
                         ),
                       ],
                     ),
-                    const SizedBox(height: 16),
+
+                    const SizedBox(height: 12),
+                    const Text('Order & Donate',
+                        style: TextStyle(
+                            fontSize: 26,
+                            fontWeight: FontWeight.w800,
+                            height: 1.1)),
+                    const SizedBox(height: 14),
 
                     // Search bar
                     AppSearchBar(
-                      hint: 'Search restaurants...',
+                      hint: 'Buscar restaurantes...',
                       controller: _searchCtrl,
                       onChanged: (_) => _applyFilters(),
                     ),
@@ -306,7 +416,57 @@ class _CustomerEatsScreenState extends State<CustomerEatsScreen> {
               ),
             ),
 
-            const SliverToBoxAdapter(child: SizedBox(height: 16)),
+            // ── Results header ───────────────────────────────
+            if (!_loading)
+              SliverToBoxAdapter(
+                child: Padding(
+                  padding:
+                      const EdgeInsets.fromLTRB(20, 16, 20, 8),
+                  child: Row(
+                    children: [
+                      Text(
+                        '${_filtered.length} restaurantes',
+                        style: const TextStyle(
+                          fontSize: 13,
+                          fontWeight: FontWeight.w700,
+                          color: AppColors.textSecondary,
+                        ),
+                      ),
+                      if (_selectedCity != null) ...[
+                        const Text(' en ',
+                            style: TextStyle(
+                                fontSize: 13,
+                                color: AppColors.textSecondary)),
+                        Text(_selectedCity!,
+                            style: const TextStyle(
+                              fontSize: 13,
+                              fontWeight: FontWeight.w700,
+                              color: AppColors.primary,
+                            )),
+                        const SizedBox(width: 6),
+                        GestureDetector(
+                          onTap: () {
+                            setState(() => _selectedCity = null);
+                            _applyFilters();
+                          },
+                          child: Container(
+                            padding: const EdgeInsets.all(2),
+                            decoration: const BoxDecoration(
+                              color: AppColors.border,
+                              shape: BoxShape.circle,
+                            ),
+                            child: const Icon(Icons.close_rounded,
+                                size: 12,
+                                color: AppColors.textSecondary),
+                          ),
+                        ),
+                      ],
+                    ],
+                  ),
+                ),
+              ),
+
+            const SliverToBoxAdapter(child: SizedBox(height: 4)),
 
             // ── Loading ──────────────────────────────────────
             if (_loading)
@@ -327,14 +487,37 @@ class _CustomerEatsScreenState extends State<CustomerEatsScreen> {
                           style: TextStyle(fontSize: 48)),
                       const SizedBox(height: 12),
                       Text(
-                        _searchCtrl.text.isEmpty
-                            ? 'No restaurants in this category yet'
-                            : 'No results for "${_searchCtrl.text}"',
+                        _selectedCity != null
+                            ? 'No hay restaurantes en $_selectedCity'
+                            : 'No hay restaurantes en esta categoría',
                         style: const TextStyle(
                             color: AppColors.textSecondary,
                             fontSize: 14),
                         textAlign: TextAlign.center,
                       ),
+                      if (_selectedCity != null) ...[
+                        const SizedBox(height: 12),
+                        GestureDetector(
+                          onTap: () {
+                            setState(() => _selectedCity = null);
+                            _applyFilters();
+                          },
+                          child: Container(
+                            padding: const EdgeInsets.symmetric(
+                                horizontal: 16, vertical: 8),
+                            decoration: BoxDecoration(
+                              color: AppColors.primaryBg,
+                              borderRadius: BorderRadius.circular(12),
+                            ),
+                            child: const Text('Ver todas las ciudades',
+                                style: TextStyle(
+                                  fontSize: 13,
+                                  fontWeight: FontWeight.w700,
+                                  color: AppColors.primary,
+                                )),
+                          ),
+                        ),
+                      ],
                     ],
                   ),
                 ),
@@ -374,16 +557,14 @@ class _CustomerEatsScreenState extends State<CustomerEatsScreen> {
                       borderRadius: BorderRadius.circular(16),
                       boxShadow: primaryShadow,
                     ),
-                    padding:
-                        const EdgeInsets.symmetric(horizontal: 20),
+                    padding: const EdgeInsets.symmetric(horizontal: 20),
                     child: Row(
                       children: [
                         Container(
                           padding: const EdgeInsets.symmetric(
                               horizontal: 10, vertical: 4),
                           decoration: BoxDecoration(
-                            color: Colors.white
-                                .withValues(alpha: 0.2),
+                            color: Colors.white.withValues(alpha: 0.2),
                             borderRadius: BorderRadius.circular(10),
                           ),
                           child: Text('${cart.itemCount}',
@@ -395,15 +576,14 @@ class _CustomerEatsScreenState extends State<CustomerEatsScreen> {
                         ),
                         const SizedBox(width: 12),
                         const Expanded(
-                          child: Text('View Cart',
+                          child: Text('Ver carrito',
                               style: TextStyle(
                                 color: Colors.white,
                                 fontSize: 16,
                                 fontWeight: FontWeight.w700,
                               )),
                         ),
-                        Text(
-                            '\$${cart.subtotal.toStringAsFixed(2)}',
+                        Text('\$${cart.subtotal.toStringAsFixed(2)}',
                             style: const TextStyle(
                               color: Colors.white,
                               fontSize: 15,
@@ -415,6 +595,58 @@ class _CustomerEatsScreenState extends State<CustomerEatsScreen> {
                 ),
               ),
             ),
+    );
+  }
+}
+
+// ── City option tile ──────────────────────────────────────────────────────────
+class _CityOption extends StatelessWidget {
+  final String city;
+  final IconData icon;
+  final bool selected;
+  final VoidCallback onTap;
+  const _CityOption({
+    required this.city,
+    required this.icon,
+    required this.selected,
+    required this.onTap,
+  });
+
+  @override
+  Widget build(BuildContext context) {
+    return GestureDetector(
+      onTap: onTap,
+      child: Container(
+        padding: const EdgeInsets.all(14),
+        decoration: BoxDecoration(
+          color: selected ? AppColors.primaryBg : AppColors.background,
+          borderRadius: BorderRadius.circular(14),
+          border: selected
+              ? Border.all(color: AppColors.primary, width: 1.5)
+              : null,
+        ),
+        child: Row(
+          children: [
+            Icon(icon,
+                size: 20,
+                color: selected ? AppColors.primary : AppColors.textSecondary),
+            const SizedBox(width: 12),
+            Expanded(
+              child: Text(city,
+                  style: TextStyle(
+                    fontSize: 14,
+                    fontWeight: FontWeight.w700,
+                    color: selected
+                        ? AppColors.primary
+                        : AppColors.textPrimary,
+                  )),
+            ),
+            if (selected)
+              const Icon(Icons.check_circle_rounded,
+                  color: AppColors.primary, size: 20),
+          ],
+        ),
+      ),
     );
   }
 }
@@ -434,8 +666,8 @@ class _RestaurantCard extends StatelessWidget {
         onTap: () => Navigator.push(
           context,
           MaterialPageRoute(
-              builder: (_) => CustomerRestaurantMenuScreen(
-                  restaurant: restaurant)),
+              builder: (_) =>
+                  CustomerRestaurantMenuScreen(restaurant: restaurant)),
         ),
         padding: EdgeInsets.zero,
         child: Column(
@@ -539,15 +771,36 @@ class _RestaurantCard extends StatelessWidget {
                                 fontSize: 15,
                                 fontWeight: FontWeight.w800)),
                         const SizedBox(height: 3),
-                        Text(
-                          restaurant.description ??
-                              restaurant.address ??
-                              'Local restaurant',
-                          style: const TextStyle(
-                              fontSize: 12,
-                              color: AppColors.textSecondary),
-                          maxLines: 1,
-                          overflow: TextOverflow.ellipsis,
+                        Row(
+                          children: [
+                            if (restaurant.city != null) ...[
+                              const Icon(Icons.location_city_rounded,
+                                  size: 12,
+                                  color: AppColors.textMuted),
+                              const SizedBox(width: 3),
+                              Text(restaurant.city!,
+                                  style: const TextStyle(
+                                      fontSize: 12,
+                                      color: AppColors.textMuted,
+                                      fontWeight: FontWeight.w500)),
+                              const Text(' · ',
+                                  style: TextStyle(
+                                      fontSize: 12,
+                                      color: AppColors.textMuted)),
+                            ],
+                            Flexible(
+                              child: Text(
+                                restaurant.description ??
+                                    restaurant.address ??
+                                    'Restaurante local',
+                                style: const TextStyle(
+                                    fontSize: 12,
+                                    color: AppColors.textSecondary),
+                                maxLines: 1,
+                                overflow: TextOverflow.ellipsis,
+                              ),
+                            ),
+                          ],
                         ),
                       ],
                     ),
@@ -568,19 +821,19 @@ class _RestaurantCard extends StatelessWidget {
 
   String _emojiForCategory(String cat) {
     return switch (cat.toLowerCase()) {
-      'mexican'    => '🌮',
-      'burgers'    => '🍔',
-      'pizza'      => '🍕',
-      'sushi'      => '🍣',
-      'asian'      => '🍜',
-      'healthy'    => '🥗',
-      'chicken'    => '🍗',
-      'sandwiches' => '🥪',
-      'seafood'    => '🦐',
-      'desserts'   => '🍰',
-      'coffee'     => '☕',
-      'drinks'     => '🧃',
-      _            => '🍽️',
+      'mexicana' || 'mexican'      => '🌮',
+      'hamburguesas' || 'burgers'  => '🍔',
+      'pizza'                      => '🍕',
+      'sushi'                      => '🍣',
+      'asiática' || 'asian'        => '🍜',
+      'saludable' || 'healthy'     => '🥗',
+      'pollo' || 'chicken'         => '🍗',
+      'sandwiches'                 => '🥪',
+      'mariscos' || 'seafood'      => '🦐',
+      'postres' || 'desserts'      => '🍰',
+      'café' || 'coffee'           => '☕',
+      'bebidas' || 'drinks'        => '🧃',
+      _                            => '🍽️',
     };
   }
 }

@@ -1,7 +1,10 @@
 import 'package:flutter/material.dart';
+import 'package:provider/provider.dart';
+import '../../core/providers/auth_provider.dart';
 import '../../core/services/firestore_service.dart';
 import '../../core/theme/app_theme.dart';
 import '../../widgets/common/app_card.dart';
+import 'cause_ranking_screen.dart';
 import 'refer_cause_screen.dart';
 
 class CustomerImpactScreen extends StatefulWidget {
@@ -23,9 +26,8 @@ class _CustomerImpactScreenState extends State<CustomerImpactScreen> {
   }
 
   Future<void> _load() async {
-    // En producción se usa el email del usuario autenticado
-    // Por ahora cargamos con un email demo si no hay sesión
-    final impact = await _fs.getCustomerImpact('demo@example.com');
+    final email = context.read<AuthProvider>().user?.email ?? '';
+    final impact = await _fs.getCustomerImpact(email);
     if (mounted) setState(() { _data = impact; _loading = false; });
   }
 
@@ -51,15 +53,31 @@ class _CustomerImpactScreenState extends State<CustomerImpactScreen> {
                   children: [
                     const Text('My Impact',
                         style: TextStyle(fontSize: 22, fontWeight: FontWeight.w800)),
-                    Container(
-                      width: 36, height: 36,
-                      decoration: BoxDecoration(
-                        color: AppColors.surface,
-                        shape: BoxShape.circle,
-                        boxShadow: cardShadow,
+                    GestureDetector(
+                      onTap: () => Navigator.push(context,
+                          MaterialPageRoute(
+                              builder: (_) => const CauseRankingScreen())),
+                      child: Container(
+                        padding: const EdgeInsets.symmetric(
+                            horizontal: 12, vertical: 8),
+                        decoration: BoxDecoration(
+                          color: AppColors.primaryBg,
+                          borderRadius: BorderRadius.circular(12),
+                        ),
+                        child: const Row(
+                          children: [
+                            Icon(Icons.leaderboard_rounded,
+                                size: 16, color: AppColors.primary),
+                            SizedBox(width: 6),
+                            Text('Ranking',
+                                style: TextStyle(
+                                  fontSize: 13,
+                                  fontWeight: FontWeight.w700,
+                                  color: AppColors.primary,
+                                )),
+                          ],
+                        ),
                       ),
-                      child: const Icon(Icons.help_outline_rounded,
-                          size: 18, color: AppColors.textSecondary),
                     ),
                   ],
                 ),

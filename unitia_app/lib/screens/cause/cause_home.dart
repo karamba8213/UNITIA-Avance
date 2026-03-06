@@ -10,6 +10,7 @@ import '../../widgets/common/stat_card.dart';
 import '../auth/login_screen.dart';
 import 'cause_donations_screen.dart';
 import 'cause_settings_screen.dart';
+import 'cause_updates_screen.dart';
 
 class CauseHome extends StatefulWidget {
   const CauseHome({super.key});
@@ -26,6 +27,7 @@ class _CauseHomeState extends State<CauseHome> {
     final screens = [
       _CauseDashboardTab(uid: auth.user!.uid),
       CauseDonationsScreen(uid: auth.user!.uid),
+      CauseUpdatesScreen(uid: auth.user!.uid),
       CauseSettingsScreen(uid: auth.user!.uid),
     ];
 
@@ -57,6 +59,11 @@ class _CauseHomeState extends State<CauseHome> {
               icon: Icon(Icons.volunteer_activism_outlined),
               selectedIcon: Icon(Icons.volunteer_activism),
               label: 'Donaciones',
+            ),
+            NavigationDestination(
+              icon: Icon(Icons.campaign_outlined),
+              selectedIcon: Icon(Icons.campaign_rounded),
+              label: 'Noticias',
             ),
             NavigationDestination(
               icon: Icon(Icons.person_outline_rounded),

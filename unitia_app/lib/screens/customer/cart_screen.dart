@@ -7,8 +7,7 @@ import '../../core/services/firestore_service.dart';
 import '../../core/theme/app_theme.dart';
 import '../../widgets/common/app_button.dart';
 import '../../widgets/common/app_card.dart';
-import '../../widgets/common/app_input.dart';
-import 'order_status_screen.dart';
+import 'order_impact_screen.dart';
 
 class CartScreen extends StatefulWidget {
   const CartScreen({super.key});
@@ -79,18 +78,22 @@ class _CartScreenState extends State<CartScreen> {
         _fs.updateCustomerProfile(auth.user!.uid, {'deliveryAddress': address});
       }
 
+      final cause          = cart.selectedCause!;
+      final donationAmount = cart.donationAmount;
+
       final orderId = await _fs.createOrder(
         restaurantId:    cart.restaurant!.id,
         restaurantName:  cart.restaurant!.name,
-        causeId:         cart.selectedCause!.id,
-        causeName:       cart.selectedCause!.name,
+        causeId:         cause.id,
+        causeName:       cause.name,
         customerName:    auth.user?.name ?? 'Customer',
+        customerId:      auth.user?.uid,
         customerEmail:   auth.user?.email,
         notes:           msg.isEmpty ? null : msg,
         deliveryAddress: address.isEmpty ? null : address,
         items: cart.items.map((i) => i.toOrderItem().toMap()).toList(),
         subtotal:        cart.subtotal,
-        donationAmount:  cart.donationAmount,
+        donationAmount:  donationAmount,
         causeMessage:    msg.isEmpty ? null : msg,
       );
 
@@ -98,7 +101,14 @@ class _CartScreenState extends State<CartScreen> {
       cart.clear();
       Navigator.pushReplacement(
         context,
-        MaterialPageRoute(builder: (_) => OrderStatusScreen(orderId: orderId)),
+        MaterialPageRoute(
+          builder: (_) => OrderImpactScreen(
+            orderId:        orderId,
+            causeName:      cause.name,
+            causeId:        cause.id,
+            donationAmount: donationAmount,
+          ),
+        ),
       );
     } catch (e) {
       if (!mounted) return;

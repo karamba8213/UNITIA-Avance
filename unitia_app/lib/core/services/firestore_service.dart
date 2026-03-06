@@ -1,6 +1,7 @@
 import 'package:cloud_firestore/cloud_firestore.dart' hide Order;
 import '../models/restaurant.dart';
 import '../models/cause.dart';
+import '../models/cause_update.dart';
 import '../models/order.dart';
 
 class FirestoreService {
@@ -87,13 +88,14 @@ class FirestoreService {
 
   // ─── ORDERS ───────────────────────────────────────────────
 
-  /// Creates an order + donation atomically
+  /// Creates an order + donation atomically and increments cause helpers
   Future<String> createOrder({
     required String restaurantId,
     required String restaurantName,
     required String causeId,
     required String causeName,
     required String customerName,
+    String? customerId,
     String? customerEmail,
     String? customerPhone,
     String? notes,
@@ -112,6 +114,7 @@ class FirestoreService {
       'causeId': causeId,
       'causeName': causeName,
       'customerName': customerName,
+      if (customerId != null) 'customerId': customerId,
       'customerEmail': customerEmail,
       'customerPhone': customerPhone,
       'notes': notes,
@@ -134,10 +137,16 @@ class FirestoreService {
       'causeId': causeId,
       'causeName': causeName,
       'customerName': customerName,
+      if (customerId != null) 'customerId': customerId,
       'amount': donationAmount,
       'status': 'pending',
       if (causeMessage != null) 'causeMessage': causeMessage,
       'createdAt': FieldValue.serverTimestamp(),
+    });
+
+    // Increment helpers count on the cause
+    batch.update(_db.collection('causes').doc(causeId), {
+      'helpersCount': FieldValue.increment(1),
     });
 
     await batch.commit();
@@ -332,7 +341,6 @@ class FirestoreService {
     final orders = await _db
         .collection('orders')
         .where('customerEmail', isEqualTo: email)
-        .where('status', isEqualTo: 'confirmed')
         .orderBy('createdAt', descending: true)
         .get();
 
@@ -368,5 +376,87 @@ class FirestoreService {
       'byCause': byCause,
       'recentOrders': orders.docs.take(10).map((d) => {'id': d.id, ...d.data()}).toList(),
     };
+  }
+
+  // ─── CAUSE UPDATES ────────────────────────────────────────
+
+  Stream<List<CauseUpdate>> causeUpdatesStream(String causeId) => _db
+      .collection('causes')
+      .doc(causeId)
+      .collection('updates')
+      .orderBy('createdAt', descending: true)
+      .snapshots()
+      .map((s) => s.docs.map((d) => CauseUpdate.fromMap(d.id, d.data())).toList());
+
+  Future<void> addCauseUpdate(String causeId, String message, {String? imageUrl}) =>
+      _db.collection('causes').doc(causeId).collection('updates').add({
+        'message': message,
+        if (imageUrl != null) 'imageUrl': imageUrl,
+        'createdAt': FieldValue.serverTimestamp(),
+      });
+
+  // ─── CAUSE RANKING ────────────────────────────────────────
+
+  /// Returns causes ranked by amount raised in the given period.
+  /// period: 'all' | 'monthly' | 'weekly'
+  Future<List<Map<String, dynamic>>> getCausesRanking({String period = 'all'}) async {
+    if (period == 'all') {
+      final snap = await _db
+          .collection('causes')
+          .where('isVerified', isEqualTo: true)
+          .orderBy('totalRaised', descending: true)
+          .limit(20)
+          .get();
+      return snap.docs.map((d) => {'id': d.id, ...d.data()}).toList();
+    }
+
+    // For weekly/monthly: aggregate donations from the period
+    final now = DateTime.now();
+    final from = period == 'weekly'
+        ? now.subtract(const Duration(days: 7))
+        : DateTime(now.year, now.month, 1);
+
+    final snap = await _db
+        .collection('donations')
+        .where('createdAt', isGreaterThanOrEqualTo: Timestamp.fromDate(from))
+        .get();
+
+    final Map<String, Map<String, dynamic>> map = {};
+    for (final doc in snap.docs) {
+      final causeId = doc['causeId'] as String? ?? '';
+      if (causeId.isEmpty) continue;
+      if (!map.containsKey(causeId)) {
+        map[causeId] = {
+          'id': causeId,
+          'causeName': doc['causeName'] ?? '',
+          'totalRaised': 0.0,
+          'helpersCount': 0,
+        };
+      }
+      map[causeId]!['totalRaised'] =
+          (map[causeId]!['totalRaised'] as double) + (doc['amount'] ?? 0.0).toDouble();
+      map[causeId]!['helpersCount'] = (map[causeId]!['helpersCount'] as int) + 1;
+    }
+
+    // Fetch full cause data to get name, logo, targetAmount
+    final ranked = map.values.toList()
+      ..sort((a, b) =>
+          (b['totalRaised'] as double).compareTo(a['totalRaised'] as double));
+
+    // Enrich with cause docs (batch fetch)
+    final causeDocs = await Future.wait(
+      ranked.take(20).map((r) => _db.collection('causes').doc(r['id'] as String).get()),
+    );
+    for (int i = 0; i < causeDocs.length; i++) {
+      final doc = causeDocs[i];
+      if (doc.exists) {
+        ranked[i]['name']         = doc['name'] ?? ranked[i]['causeName'];
+        ranked[i]['logo']         = doc.data()?['logo'];
+        ranked[i]['targetAmount'] = (doc.data()?['targetAmount'] ?? 0.0).toDouble();
+        ranked[i]['description']  = doc.data()?['description'] ?? '';
+      }
+    }
+
+    return ranked.take(20).toList();
   }
 }

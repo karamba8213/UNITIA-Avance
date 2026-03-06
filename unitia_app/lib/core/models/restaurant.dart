@@ -15,6 +15,7 @@ class Restaurant {
   final double? latitude;
   final double? longitude;
   final String? category;
+  final String? city;
 
   const Restaurant({
     required this.id,
@@ -33,6 +34,7 @@ class Restaurant {
     this.latitude,
     this.longitude,
     this.category,
+    this.city,
   });
 
   factory Restaurant.fromMap(String id, Map<String, dynamic> m) => Restaurant(
@@ -54,6 +56,7 @@ class Restaurant {
         latitude:  (m['latitude'] as num?)?.toDouble(),
         longitude: (m['longitude'] as num?)?.toDouble(),
         category:  m['category'] as String?,
+        city:      m['city'] as String?,
       );
 
   Map<String, dynamic> toMap() => {
@@ -72,5 +75,6 @@ class Restaurant {
         if (latitude != null) 'latitude': latitude,
         if (longitude != null) 'longitude': longitude,
         if (category != null) 'category': category,
+        if (city != null) 'city': city,
       };
 }

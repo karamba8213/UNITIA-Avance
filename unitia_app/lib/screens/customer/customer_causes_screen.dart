@@ -7,6 +7,8 @@ import '../../core/theme/app_theme.dart';
 import '../../widgets/common/app_card.dart';
 import '../../widgets/common/app_input.dart';
 import 'cart_screen.dart';
+import 'cause_detail_screen.dart';
+import 'cause_ranking_screen.dart';
 
 class CustomerCausesScreen extends StatefulWidget {
   const CustomerCausesScreen({super.key});
@@ -225,8 +227,10 @@ class _CustomerCausesScreenState extends State<CustomerCausesScreen> {
                     const Text('Featured',
                         style: TextStyle(fontSize: 17, fontWeight: FontWeight.w800)),
                     GestureDetector(
-                      onTap: () {},
-                      child: const Text('SEE ALL',
+                      onTap: () => Navigator.push(context,
+                          MaterialPageRoute(
+                              builder: (_) => const CauseRankingScreen())),
+                      child: const Text('RANKING',
                           style: TextStyle(
                             fontSize: 12,
                             fontWeight: FontWeight.w700,
@@ -289,7 +293,8 @@ class _FeaturedCard extends StatelessWidget {
   Widget build(BuildContext context) {
     return AppCard(
       padding: null,
-      onTap: () {},
+      onTap: () => Navigator.push(context,
+          MaterialPageRoute(builder: (_) => CauseDetailScreen(cause: cause))),
       child: SizedBox(
         width: 200,
         child: Stack(
@@ -376,7 +381,8 @@ class _CauseGridCard extends StatelessWidget {
   @override
   Widget build(BuildContext context) {
     return AppCard(
-      onTap: () {},
+      onTap: () => Navigator.push(context,
+          MaterialPageRoute(builder: (_) => CauseDetailScreen(cause: cause))),
       padding: const EdgeInsets.all(12),
       child: Row(
         children: [

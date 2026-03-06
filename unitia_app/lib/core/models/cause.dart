@@ -11,6 +11,7 @@ class Cause {
   final double totalRaised;
   final bool isVerified;
   final DateTime createdAt;
+  final int helpersCount;
 
   const Cause({
     required this.id,
@@ -25,6 +26,7 @@ class Cause {
     required this.totalRaised,
     required this.isVerified,
     required this.createdAt,
+    this.helpersCount = 0,
   });
 
   double get progress =>
@@ -45,6 +47,7 @@ class Cause {
         createdAt: m['createdAt'] != null
             ? (m['createdAt'] as dynamic).toDate()
             : DateTime.now(),
+        helpersCount: (m['helpersCount'] ?? 0) as int,
       );
 
   Map<String, dynamic> toMap() => {
@@ -59,5 +62,6 @@ class Cause {
         'totalRaised': totalRaised,
         'isVerified': isVerified,
         'createdAt': createdAt,
+        'helpersCount': helpersCount,
       };
 }
