@@ -1,0 +1,123 @@
+<!DOCTYPE html>
+
+<html lang="en"><head>
+<meta charset="utf-8"/>
+<meta content="width=device-width, initial-scale=1.0" name="viewport"/>
+<title>Refer a New Cause</title>
+<script src="https://cdn.tailwindcss.com?plugins=forms,container-queries"></script>
+<link href="https://fonts.googleapis.com/css2?family=Manrope:wght@400;500;700&amp;display=swap" rel="stylesheet"/>
+<link href="https://fonts.googleapis.com/css2?family=Material+Symbols+Outlined:wght,FILL@100..700,0..1&amp;display=swap" rel="stylesheet"/>
+<link href="https://fonts.googleapis.com/css2?family=Material+Symbols+Outlined:wght,FILL@100..700,0..1&amp;display=swap" rel="stylesheet"/>
+<script id="tailwind-config">
+        tailwind.config = {
+            darkMode: "class",
+            theme: {
+                extend: {
+                    colors: {
+                        "primary": "#f27f0d",
+                        "background-light": "#f8f7f5",
+                        "background-dark": "#221910",
+                    },
+                    fontFamily: {
+                        "display": ["Manrope", "sans-serif"]
+                    },
+                    borderRadius: {
+                        "DEFAULT": "0.25rem",
+                        "lg": "0.5rem",
+                        "xl": "0.75rem",
+                        "full": "9999px"
+                    },
+                },
+            },
+        }
+    </script>
+<style>
+        body {
+            font-family: 'Manrope', sans-serif;
+        }
+        .ios-shadow {
+            box-shadow: 0 -2px 10px rgba(0, 0, 0, 0.05);
+        }
+    </style>
+<style>
+    body {
+      min-height: max(884px, 100dvh);
+    }
+  </style>
+  </head>
+<body class="bg-background-light dark:bg-background-dark text-[#181411] dark:text-white min-h-screen flex flex-col">
+<!-- Header / Top Bar -->
+<header class="sticky top-0 z-10 bg-white/80 dark:bg-background-dark/80 backdrop-blur-md border-b border-[#e6e0db] dark:border-white/10 px-4 py-4 flex items-center justify-between">
+<button class="flex items-center justify-center p-2 hover:bg-gray-100 dark:hover:bg-white/10 rounded-full transition-colors">
+<span class="material-symbols-outlined text-2xl">arrow_back_ios</span>
+</button>
+<h1 class="text-lg font-bold tracking-tight">Refer a Cause</h1>
+<div class="w-10"></div> <!-- Spacer for centering title -->
+</header>
+<!-- Main Content -->
+<main class="flex-1 overflow-y-auto px-4 pb-32">
+<!-- Hero/Instructional Card -->
+<div class="mt-6 p-5 rounded-xl bg-primary/10 border border-primary/20">
+<div class="flex items-start gap-3">
+<span class="material-symbols-outlined text-primary text-2xl mt-1">info</span>
+<div>
+<h2 class="text-[19px] font-bold leading-tight mb-2">Suggest a New Organization</h2>
+<p class="text-sm opacity-80 leading-relaxed">
+                        Know a local cause we should support? Help us grow our community! Once submitted, our admin team will verify the details before they join the marketplace.
+                    </p>
+</div>
+</div>
+</div>
+<!-- Form Section -->
+<div class="mt-8 space-y-6">
+<!-- Organization Name -->
+<div class="flex flex-col gap-2">
+<label class="text-sm font-bold uppercase tracking-wider text-primary/80 ml-1">Name of the Cause</label>
+<input class="w-full h-14 px-4 rounded-xl border-2 border-[#e6e0db] dark:border-white/10 bg-white dark:bg-white/5 focus:border-primary focus:ring-0 transition-all placeholder:text-[#8a7560]" placeholder="e.g. Local Food Bank" type="text"/>
+</div>
+<!-- Contact Person -->
+<div class="flex flex-col gap-2">
+<label class="text-sm font-bold uppercase tracking-wider text-primary/80 ml-1">Contact Person</label>
+<input class="w-full h-14 px-4 rounded-xl border-2 border-[#e6e0db] dark:border-white/10 bg-white dark:bg-white/5 focus:border-primary focus:ring-0 transition-all placeholder:text-[#8a7560]" placeholder="Full name of contact" type="text"/>
+</div>
+<!-- Email Address -->
+<div class="flex flex-col gap-2">
+<label class="text-sm font-bold uppercase tracking-wider text-primary/80 ml-1">Email Address</label>
+<input class="w-full h-14 px-4 rounded-xl border-2 border-[#e6e0db] dark:border-white/10 bg-white dark:bg-white/5 focus:border-primary focus:ring-0 transition-all placeholder:text-[#8a7560]" placeholder="contact@organization.org" type="email"/>
+</div>
+<!-- Mission Description -->
+<div class="flex flex-col gap-2">
+<label class="text-sm font-bold uppercase tracking-wider text-primary/80 ml-1">Mission Description</label>
+<textarea class="w-full p-4 rounded-xl border-2 border-[#e6e0db] dark:border-white/10 bg-white dark:bg-white/5 focus:border-primary focus:ring-0 transition-all placeholder:text-[#8a7560] resize-none" placeholder="Briefly describe their mission and impact..." rows="4"></textarea>
+</div>
+</div>
+</main>
+<!-- Bottom Action & Navigation -->
+<div class="fixed bottom-0 left-0 w-full bg-white dark:bg-background-dark ios-shadow border-t border-[#f5f2f0] dark:border-white/10 z-20">
+<!-- Main Action Button -->
+<div class="px-4 pt-4 pb-2">
+<button class="w-full bg-primary hover:bg-primary/90 text-white font-bold py-4 rounded-xl shadow-lg shadow-primary/20 transition-transform active:scale-[0.98] flex items-center justify-center gap-2">
+<span class="material-symbols-outlined">send</span>
+                Send Invitation
+            </button>
+</div>
+<!-- Tab Bar -->
+<nav class="flex justify-around items-center px-4 pb-6 pt-2">
+<a class="flex flex-col items-center gap-1 group" href="#">
+<span class="material-symbols-outlined text-primary fill-1">favorite</span>
+<span class="text-[10px] font-bold text-primary">CAUSES</span>
+</a>
+<a class="flex flex-col items-center gap-1 group text-[#8a7560] dark:text-gray-400" href="#">
+<span class="material-symbols-outlined group-hover:text-primary transition-colors">bar_chart</span>
+<span class="text-[10px] font-bold group-hover:text-primary transition-colors">IMPACT</span>
+</a>
+<a class="flex flex-col items-center gap-1 group text-[#8a7560] dark:text-gray-400" href="#">
+<span class="material-symbols-outlined group-hover:text-primary transition-colors">person</span>
+<span class="text-[10px] font-bold group-hover:text-primary transition-colors">ACCOUNT</span>
+</a>
+</nav>
+</div>
+<!-- Background Decoration -->
+<div class="fixed top-0 right-0 -z-10 w-64 h-64 bg-primary/5 rounded-full blur-3xl -mr-32 -mt-32"></div>
+<div class="fixed bottom-0 left-0 -z-10 w-64 h-64 bg-primary/5 rounded-full blur-3xl -ml-32 -mb-32"></div>
+</body></html>

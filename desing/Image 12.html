@@ -1,0 +1,89 @@
+<!DOCTYPE html>
+
+<html class="light" lang="en"><head>
+<meta charset="utf-8"/>
+<meta content="width=device-width, initial-scale=1.0" name="viewport"/>
+<script src="https://cdn.tailwindcss.com?plugins=forms,container-queries"></script>
+<link href="https://fonts.googleapis.com/css2?family=Plus+Jakarta+Sans:wght@400;500;600;700&amp;display=swap" rel="stylesheet"/>
+<link href="https://fonts.googleapis.com/css2?family=Material+Symbols+Outlined:wght@400,FILL@0..1&amp;display=swap" rel="stylesheet"/>
+<link href="https://fonts.googleapis.com/css2?family=Material+Symbols+Outlined:wght,FILL@100..700,0..1&amp;display=swap" rel="stylesheet"/>
+<script id="tailwind-config">
+      tailwind.config = {
+        darkMode: "class",
+        theme: {
+          extend: {
+            colors: {
+              "primary": "#f2590d",
+              "background-light": "#f8f6f5",
+              "background-dark": "#221610",
+            },
+            fontFamily: {
+              "display": ["Plus Jakarta Sans", "sans-serif"]
+            },
+            borderRadius: {"DEFAULT": "1rem", "lg": "2rem", "xl": "3rem", "full": "9999px"},
+          },
+        },
+      }
+    </script>
+<title>Phone OTP Verification</title>
+<style>
+    body {
+      min-height: max(884px, 100dvh);
+    }
+  </style>
+  </head>
+<body class="bg-background-light dark:bg-background-dark font-display antialiased text-slate-900 dark:text-slate-100">
+<div class="relative flex min-h-screen w-full flex-col overflow-x-hidden">
+<!-- Header / Navigation -->
+<div class="flex items-center p-4 pb-2 justify-between">
+<button class="text-primary flex size-12 shrink-0 items-center justify-start hover:opacity-80 transition-opacity">
+<span class="material-symbols-outlined" style="font-size: 28px;">arrow_back_ios</span>
+</button>
+<div class="flex-1">
+<h2 class="text-slate-900 dark:text-slate-100 text-center text-lg font-bold leading-tight tracking-tight pr-12">Verification</h2>
+</div>
+</div>
+<!-- Content Section -->
+<div class="flex flex-col px-6 pt-8 flex-grow">
+<!-- Icon/Brand Element -->
+<div class="mb-8 flex justify-center">
+<div class="size-20 bg-primary/10 rounded-2xl flex items-center justify-center">
+<span class="material-symbols-outlined text-primary" style="font-size: 40px; font-variation-settings: 'FILL' 1;">sms</span>
+</div>
+</div>
+<h1 class="text-slate-900 dark:text-slate-100 text-3xl font-bold leading-tight mb-3">Check your messages</h1>
+<p class="text-slate-600 dark:text-slate-400 text-base font-normal leading-relaxed mb-10">
+                We've sent a 6-digit verification code to <span class="font-semibold text-slate-900 dark:text-white">+1 (555) •••-••92</span>. 
+                Please enter it below to join the marketplace.
+            </p>
+<!-- OTP Input Fields -->
+<div class="flex justify-between gap-2 mb-8">
+<input class="w-12 h-16 text-center text-2xl font-bold bg-white dark:bg-slate-800 border-2 border-slate-200 dark:border-slate-700 rounded-xl focus:border-primary focus:ring-0 transition-all outline-none" maxlength="1" placeholder="•" type="text"/>
+<input class="w-12 h-16 text-center text-2xl font-bold bg-white dark:bg-slate-800 border-2 border-slate-200 dark:border-slate-700 rounded-xl focus:border-primary focus:ring-0 transition-all outline-none" maxlength="1" placeholder="•" type="text"/>
+<input class="w-12 h-16 text-center text-2xl font-bold bg-white dark:bg-slate-800 border-2 border-slate-200 dark:border-slate-700 rounded-xl focus:border-primary focus:ring-0 transition-all outline-none" maxlength="1" placeholder="•" type="text"/>
+<input class="w-12 h-16 text-center text-2xl font-bold bg-white dark:bg-slate-800 border-2 border-slate-200 dark:border-slate-700 rounded-xl focus:border-primary focus:ring-0 transition-all outline-none" maxlength="1" placeholder="•" type="text"/>
+<input class="w-12 h-16 text-center text-2xl font-bold bg-white dark:bg-slate-800 border-2 border-slate-200 dark:border-slate-700 rounded-xl focus:border-primary focus:ring-0 transition-all outline-none" maxlength="1" placeholder="•" type="text"/>
+<input class="w-12 h-16 text-center text-2xl font-bold bg-white dark:bg-slate-800 border-2 border-slate-200 dark:border-slate-700 rounded-xl focus:border-primary focus:ring-0 transition-all outline-none" maxlength="1" placeholder="•" type="text"/>
+</div>
+<!-- Resend Link -->
+<div class="flex flex-col items-center gap-2 mb-10">
+<p class="text-slate-500 dark:text-slate-400 text-sm">Didn't receive the code?</p>
+<button class="text-primary font-bold text-sm hover:underline decoration-primary underline-offset-4">
+                    Resend Code (00:45)
+                </button>
+</div>
+<!-- Action Button -->
+<div class="mt-auto pb-10">
+<button class="w-full bg-primary hover:bg-primary/90 text-white font-bold py-4 rounded-xl shadow-lg shadow-primary/20 transition-all active:scale-[0.98]">
+                    Confirm Code
+                </button>
+<p class="text-center mt-6 text-xs text-slate-400 dark:text-slate-500 px-4">
+                    By confirming, you agree to our Marketplace Terms of Service and Privacy Policy for local cash collaborations.
+                </p>
+</div>
+</div>
+<!-- Visual Background Decoration (Optional subtle hint of brand) -->
+<div class="fixed -bottom-24 -right-24 size-64 bg-primary/5 rounded-full blur-3xl pointer-events-none"></div>
+<div class="fixed -top-24 -left-24 size-64 bg-primary/5 rounded-full blur-3xl pointer-events-none"></div>
+</div>
+</body></html>

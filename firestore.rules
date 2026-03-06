@@ -1,0 +1,66 @@
+rules_version = '2';
+service cloud.firestore {
+  match /databases/{database}/documents {
+
+    // ── helpers ──────────────────────────────────────────────────────────────
+    function isAuth() {
+      return request.auth != null;
+    }
+    function isOwner(uid) {
+      return isAuth() && request.auth.uid == uid;
+    }
+
+    // ── restaurants ───────────────────────────────────────────────────────────
+    match /restaurants/{restaurantId} {
+      // Public read (needed for order page /r/[slug])
+      allow read: if true;
+      // Only the restaurant owner can write
+      allow write: if isOwner(resource.data.userId)
+                   || isOwner(restaurantId);
+
+      // menu subcollection
+      match /menu/{itemId} {
+        allow read: if true;
+        allow write: if isAuth()
+                     && get(/databases/$(database)/documents/restaurants/$(restaurantId)).data.userId == request.auth.uid;
+      }
+    }
+
+    // ── causes ────────────────────────────────────────────────────────────────
+    match /causes/{causeId} {
+      // Public read (public cause page)
+      allow read: if true;
+      // Only the cause owner can write (except totalRaised — updated server-side)
+      allow write: if isOwner(resource.data.userId)
+                   || isOwner(causeId);
+    }
+
+    // ── orders ────────────────────────────────────────────────────────────────
+    match /orders/{orderId} {
+      // Restaurant owner can read their orders; customer can read by email (handled app-side)
+      allow read: if isAuth();
+      // Any authenticated user can create (customer placing order)
+      allow create: if isAuth();
+      // Only restaurant owner can update status
+      allow update: if isAuth()
+                    && get(/databases/$(database)/documents/restaurants/$(resource.data.restaurantId)).data.userId == request.auth.uid;
+      allow delete: if false;
+    }
+
+    // ── donations ─────────────────────────────────────────────────────────────
+    match /donations/{donationId} {
+      allow read: if isAuth();
+      // Created atomically with orders (client batch) — allow create if auth
+      allow create: if isAuth();
+      // Restaurant marks paid; cause confirms — both are authenticated
+      allow update: if isAuth();
+      allow delete: if false;
+    }
+
+    // ── users (app_users) ─────────────────────────────────────────────────────
+    match /users/{userId} {
+      allow read:  if isOwner(userId);
+      allow write: if isOwner(userId);
+    }
+  }
+}

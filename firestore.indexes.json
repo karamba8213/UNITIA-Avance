@@ -1,0 +1,97 @@
+{
+  "indexes": [
+    // ─── causes ───────────────────────────────────────────────────────────────
+    // getActiveCauses(): isVerified == true, orderBy name
+    {
+      "collectionGroup": "causes",
+      "queryScope": "COLLECTION",
+      "fields": [
+        { "fieldPath": "isVerified", "order": "ASCENDING" },
+        { "fieldPath": "name",       "order": "ASCENDING" }
+      ]
+    },
+
+    // ─── orders ───────────────────────────────────────────────────────────────
+    // restaurantOrdersStream(): restaurantId == x, orderBy createdAt DESC
+    {
+      "collectionGroup": "orders",
+      "queryScope": "COLLECTION",
+      "fields": [
+        { "fieldPath": "restaurantId", "order": "ASCENDING" },
+        { "fieldPath": "createdAt",    "order": "DESCENDING" }
+      ]
+    },
+    // getRestaurantDashboard(): restaurantId == x, createdAt >= todayStart
+    {
+      "collectionGroup": "orders",
+      "queryScope": "COLLECTION",
+      "fields": [
+        { "fieldPath": "restaurantId", "order": "ASCENDING" },
+        { "fieldPath": "createdAt",    "order": "ASCENDING" }
+      ]
+    },
+    // getCustomerImpact(): customerEmail == x, status == confirmed, orderBy createdAt DESC
+    {
+      "collectionGroup": "orders",
+      "queryScope": "COLLECTION",
+      "fields": [
+        { "fieldPath": "customerEmail", "order": "ASCENDING" },
+        { "fieldPath": "status",        "order": "ASCENDING" },
+        { "fieldPath": "createdAt",     "order": "DESCENDING" }
+      ]
+    },
+
+    // ─── donations ────────────────────────────────────────────────────────────
+    // restaurantDonationsStream(): restaurantId == x, status == y, orderBy createdAt DESC
+    {
+      "collectionGroup": "donations",
+      "queryScope": "COLLECTION",
+      "fields": [
+        { "fieldPath": "restaurantId", "order": "ASCENDING" },
+        { "fieldPath": "status",       "order": "ASCENDING" },
+        { "fieldPath": "createdAt",    "order": "DESCENDING" }
+      ]
+    },
+    // causeDonationsStream(): causeId == x, status == y, orderBy createdAt DESC
+    {
+      "collectionGroup": "donations",
+      "queryScope": "COLLECTION",
+      "fields": [
+        { "fieldPath": "causeId", "order": "ASCENDING" },
+        { "fieldPath": "status",  "order": "ASCENDING" },
+        { "fieldPath": "createdAt", "order": "DESCENDING" }
+      ]
+    },
+    // getRestaurantDashboard(): restaurantId == x (all statuses — no composite needed,
+    // but add restaurantId + createdAt for future date filtering)
+    {
+      "collectionGroup": "donations",
+      "queryScope": "COLLECTION",
+      "fields": [
+        { "fieldPath": "restaurantId", "order": "ASCENDING" },
+        { "fieldPath": "createdAt",    "order": "DESCENDING" }
+      ]
+    },
+    // getCauseDashboard(): causeId == x (all statuses)
+    {
+      "collectionGroup": "donations",
+      "queryScope": "COLLECTION",
+      "fields": [
+        { "fieldPath": "causeId",   "order": "ASCENDING" },
+        { "fieldPath": "createdAt", "order": "DESCENDING" }
+      ]
+    },
+
+    // ─── menu (subcollection) ─────────────────────────────────────────────────
+    // menuItemsStream(): isAvailable == true, orderBy category
+    {
+      "collectionGroup": "menu",
+      "queryScope": "COLLECTION_GROUP",
+      "fields": [
+        { "fieldPath": "isAvailable", "order": "ASCENDING" },
+        { "fieldPath": "category",    "order": "ASCENDING" }
+      ]
+    }
+  ],
+  "fieldOverrides": []
+}

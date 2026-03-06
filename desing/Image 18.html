@@ -1,0 +1,255 @@
+<!DOCTYPE html>
+<html lang="en"><head>
+<meta charset="utf-8"/>
+<meta content="width=device-width, initial-scale=1.0" name="viewport"/>
+<title>Select a Collaboration</title>
+<script src="https://cdn.tailwindcss.com?plugins=forms,container-queries"></script>
+<link href="https://fonts.googleapis.com/css2?family=Material+Symbols+Outlined:wght,FILL@100..700,0..1&amp;display=swap" rel="stylesheet"/>
+<link href="https://fonts.googleapis.com" rel="preconnect"/>
+<link crossorigin="" href="https://fonts.gstatic.com" rel="preconnect"/>
+<link href="https://fonts.googleapis.com/css2?family=Manrope:wght@400;500;700;800&amp;display=swap" rel="stylesheet"/>
+<script id="tailwind-config">
+        tailwind.config = {
+            darkMode: "class",
+            theme: {
+                extend: {
+                    colors: {
+                        "primary": "#FF5A1F",
+                        "primary-dark": "#E04810",
+                        "secondary": "#F7F7F7",
+                        "warm-accent": "#FF5A1F",
+                        "background-light": "#ffffff",
+                        "background-dark": "#101622",
+                    },
+                    fontFamily: {
+                        "display": ["Manrope", "sans-serif"]
+                    },
+                    borderRadius: {
+                        "DEFAULT": "0.25rem",
+                        "lg": "0.5rem",
+                        "xl": "0.75rem",
+                        "2xl": "1rem",
+                        "3xl": "1.5rem",
+                        "full": "9999px"
+                    },
+                },
+            },
+        }
+    </script>
+<style type="text/tailwindcss">
+        @layer utilities {
+            .no-scrollbar::-webkit-scrollbar {
+                display: none;
+            }
+            .no-scrollbar {
+                -ms-overflow-style: none;
+                scrollbar-width: none;
+            }
+        }
+        .material-symbols-outlined {
+            font-variation-settings: 'FILL' 0, 'wght' 400, 'GRAD' 0, 'opsz' 24;
+        }
+        body {
+            min-height: max(884px, 100dvh);
+        }
+    </style>
+<style>
+    body {
+      min-height: max(884px, 100dvh);
+    }
+  </style>
+  </head>
+<body class="bg-gray-50 dark:bg-background-dark text-[#111318] dark:text-white font-display flex justify-center min-h-screen">
+<div class="relative flex flex-col w-full max-w-md bg-white dark:bg-[#151c2b] shadow-xl min-h-screen overflow-hidden">
+<header class="sticky top-0 z-20 bg-white dark:bg-[#151c2b] border-b border-[#f0f2f4] dark:border-[#2a3441] shadow-sm">
+<div class="flex items-center justify-between px-4 py-3">
+<button class="flex items-center justify-center w-10 h-10 rounded-full hover:bg-secondary dark:hover:bg-slate-800 transition-colors text-[#111318] dark:text-white">
+<span class="material-symbols-outlined">arrow_back</span>
+</button>
+<h2 class="text-[13px] font-extrabold leading-tight flex-1 text-center text-[#111318] dark:text-white uppercase tracking-widest">Select a Collaboration</h2>
+<button class="flex w-10 items-center justify-end text-[#111318] dark:text-white">
+<span class="material-symbols-outlined">search</span>
+</button>
+</div>
+</header>
+<main class="flex-1 overflow-y-auto pb-32 no-scrollbar">
+<section class="px-5 pt-8 pb-4">
+<h1 class="text-[28px] font-extrabold leading-[1.1] text-[#111318] dark:text-white tracking-tight mb-8">
+                Who are you <br/>supporting today?
+            </h1>
+<div class="bg-[#FFF8F4] dark:bg-orange-950/20 border border-orange-100 dark:border-orange-900/30 rounded-[24px] p-5">
+<div class="flex items-center gap-4 mb-4">
+<div class="w-12 h-12 rounded-full bg-white dark:bg-slate-700 flex items-center justify-center shadow-sm text-primary">
+<span class="material-symbols-outlined text-[24px]">qr_code_scanner</span>
+</div>
+<div>
+<h3 class="font-bold text-[15px] text-[#111318] dark:text-white">Have a specific cause code?</h3>
+<p class="text-[13px] text-slate-500 dark:text-slate-400">Enter code to support directly</p>
+</div>
+</div>
+<div class="flex gap-3">
+<input class="flex-1 bg-white dark:bg-slate-900 border-gray-100 dark:border-slate-800 rounded-2xl text-[14px] px-4 py-4 focus:ring-2 focus:ring-primary/20 focus:border-primary placeholder:text-slate-400 shadow-sm" placeholder="e.g. CAUSE123" type="text"/>
+<button class="bg-primary hover:bg-primary-dark text-white font-extrabold px-8 rounded-2xl text-[14px] transition-colors shadow-lg shadow-orange-200/50 dark:shadow-none">
+                        Apply
+                    </button>
+</div>
+</div>
+<div class="flex items-center gap-4 mt-10 mb-2">
+<div class="h-px bg-gray-100 dark:bg-slate-800 flex-1"></div>
+<span class="text-[10px] font-bold text-slate-400 uppercase tracking-widest">Or explore local causes</span>
+<div class="h-px bg-gray-100 dark:bg-slate-800 flex-1"></div>
+</div>
+</section>
+<section class="py-4">
+<div class="px-5 mb-4 flex items-center justify-between">
+<h3 class="text-[20px] font-extrabold text-[#111318] dark:text-white">Featured</h3>
+<a class="text-primary text-[11px] font-extrabold uppercase tracking-widest" href="#">See all</a>
+</div>
+<div class="flex gap-4 px-5 overflow-x-auto no-scrollbar snap-x pb-4">
+<div class="snap-start shrink-0 w-[300px] group bg-white dark:bg-[#1e2736] rounded-[28px] border border-gray-100 dark:border-slate-800 shadow-sm overflow-hidden flex flex-col transition-all active:scale-[0.98]">
+<div class="relative h-44 w-full bg-slate-200">
+<img alt="Community urban garden with volunteers" class="h-full w-full object-cover" src="https://lh3.googleusercontent.com/aida-public/AB6AXuCorCHd6IlzmrN9HZyHOZEbOW8prViOUxkTPDIwGIqfdcM99Xg1nFnVo3peOH6fZTNLU9MrI_Hqsz7oB9EvSf0oSvHlzHWjpKTuUp-w01XYYAef8rkxNidiDG4fuoL7XA5IZDa1QjyYzfmuSBHDhFXbaJnUClkYNACsFG-UOw5x6VYYUtSYQKZjayh0eZ2S2vQ9U1h2akjVkiYrYqdaJfTavUsAtuUmiHBDuTEOPlBHADcG4s90NPsq2CaFkpaYNJwS4LoIXjFzUVo"/>
+<div class="absolute top-4 left-4 bg-primary text-white px-3 py-1.5 rounded-xl flex items-center gap-1.5 shadow-md">
+<span class="material-symbols-outlined text-[14px] fill-current">local_fire_department</span>
+<span class="text-[10px] font-extrabold uppercase tracking-widest">Trending</span>
+</div>
+</div>
+<div class="p-5 flex flex-col gap-1">
+<h4 class="font-extrabold text-[17px] text-[#111318] dark:text-white truncate">Urban Garden Initiative</h4>
+<div class="flex items-center gap-1.5 text-slate-400 dark:text-slate-400 text-xs mb-4">
+<span class="material-symbols-outlined text-[16px]">storefront</span>
+<span class="truncate text-[12px]">with Downtown Bakery</span>
+</div>
+<div class="flex items-center justify-between mt-auto">
+<div class="bg-[#FFF8F4] dark:bg-orange-900/30 text-primary px-3 py-2 rounded-xl text-[11px] font-extrabold border border-orange-100 dark:border-orange-900/40">
+                                5% DONATED
+                            </div>
+<button class="bg-primary text-white text-[11px] font-extrabold py-2.5 px-6 rounded-full shadow-lg shadow-orange-100 dark:shadow-none">SELECT</button>
+</div>
+</div>
+</div>
+<div class="snap-start shrink-0 w-[300px] group bg-white dark:bg-[#1e2736] rounded-[28px] border border-gray-100 dark:border-slate-800 shadow-sm overflow-hidden flex flex-col transition-all active:scale-[0.98]">
+<div class="relative h-44 w-full bg-slate-200">
+<img alt="Ocean waves hitting sandy beach" class="h-full w-full object-cover" src="https://lh3.googleusercontent.com/aida-public/AB6AXuBnwX6kUqW_qu1py13r33snXkO4hzjNCzksImYOJLD29iGuxXK7hOGoXZArj1t-zBXzRj1dKUOmFM2hP3BY6COzj1jrpkglAfS0qyjc0C7zNdU3shChOooo6QS4JlkGC_cpFTdHls04wwk8alErPtXXWAMnP335zCWZM5c8oDHog76icIwZT-U_4kTsM-uVY0oOT-klDBOO9B-56JjyqqUJqw0Qo3JlVrpc2hKEWx51nOnPkjyLc_BhH6oUdgXohv3TFHGL4zmX8bk"/>
+<div class="absolute top-4 left-4 bg-white/95 dark:bg-black/80 backdrop-blur-md px-3 py-1.5 rounded-xl flex items-center gap-1.5 shadow-md border border-white/20">
+<span class="material-symbols-outlined text-green-600 text-[16px]">eco</span>
+<span class="text-[10px] font-extrabold text-[#111318] dark:text-white uppercase tracking-widest">Eco Pick</span>
+</div>
+</div>
+<div class="p-5 flex flex-col gap-1">
+<h4 class="font-extrabold text-[17px] text-[#111318] dark:text-white truncate">Save Our Coastlines</h4>
+<div class="flex items-center gap-1.5 text-slate-400 dark:text-slate-400 text-xs mb-4">
+<span class="material-symbols-outlined text-[16px]">storefront</span>
+<span class="truncate text-[12px]">with Surf &amp; Turf Co.</span>
+</div>
+<div class="flex items-center justify-between mt-auto">
+<div class="bg-[#FFF8F4] dark:bg-orange-900/30 text-primary px-3 py-2 rounded-xl text-[11px] font-extrabold border border-orange-100 dark:border-orange-900/40">
+                                1 BAG REMOVED
+                            </div>
+<button class="bg-primary text-white text-[11px] font-extrabold py-2.5 px-6 rounded-full shadow-lg shadow-orange-100 dark:shadow-none">SELECT</button>
+</div>
+</div>
+</div>
+</div>
+</section>
+<section class="px-5 pt-6">
+<div class="flex items-center gap-3 mb-8 overflow-x-auto no-scrollbar pb-1">
+<button class="shrink-0 h-11 px-7 rounded-full bg-primary text-white flex items-center justify-center text-[13px] font-extrabold shadow-lg shadow-orange-100 dark:shadow-none">
+                    All
+                </button>
+<button class="shrink-0 h-11 px-7 rounded-full bg-white dark:bg-slate-800 border border-gray-100 dark:border-slate-700 text-slate-600 dark:text-white flex items-center justify-center text-[13px] font-extrabold">
+                    Nearby
+                </button>
+<button class="shrink-0 h-11 px-7 rounded-full bg-white dark:bg-slate-800 border border-gray-100 dark:border-slate-700 text-slate-600 dark:text-white flex items-center justify-center text-[13px] font-extrabold">
+                    Education
+                </button>
+<button class="shrink-0 h-11 px-7 rounded-full bg-white dark:bg-slate-800 border border-gray-100 dark:border-slate-700 text-slate-600 dark:text-white flex items-center justify-center text-[13px] font-extrabold">
+                    Animals
+                </button>
+</div>
+<div class="flex flex-col gap-8 pb-10">
+<div class="group flex gap-5 items-center">
+<div class="relative w-24 h-24 shrink-0 rounded-[22px] overflow-hidden bg-gray-100 shadow-sm">
+<img alt="Children reading books in a library" class="h-full w-full object-cover" src="https://lh3.googleusercontent.com/aida-public/AB6AXuC9bUgHVUg_Q0mO45qCU_kTa6XicfFID5GcaSsmw1lbC6MWzJjdgil6_ezKJgWqkyjRJ4xXqFwx4JbYQMFJw-eQbAQPHtHXvjvKIEzoW7K4KVM3GRjkOC8kI8vRlm7X_1YrU4LmOWir8Mx7oEPBzY2rM8s5eSP4loBR6YqiLM2-oXSzu8S4R5kEUMEw_kEqGdP1baUR-lb6slhWghYU2JdeAEpc4c_0lw7WFCtGpMg9QsPYWAA2Oq6ICH1mrrjgyTd29G2GAnBqMfg"/>
+</div>
+<div class="flex flex-col flex-1 min-w-0">
+<div class="flex justify-between items-start mb-0.5">
+<h3 class="font-extrabold text-[#111318] dark:text-white text-[16px] truncate pr-2">Literacy For All</h3>
+<span class="material-symbols-outlined text-slate-300 dark:text-slate-600 text-[22px]">favorite</span>
+</div>
+<p class="text-slate-500 dark:text-slate-400 text-[13px] mb-3 line-clamp-1">Providing books to underfunded schools.</p>
+<div class="flex items-center justify-between">
+<div class="flex items-center gap-1.5 text-[11px] font-extrabold text-primary">
+<span class="material-symbols-outlined text-[18px]">menu_book</span>
+<span>1 BOOK PER ORDER</span>
+</div>
+<button class="bg-[#F8F9FB] dark:bg-slate-800 hover:bg-orange-50 active:bg-orange-100 text-primary text-[11px] font-extrabold py-2.5 px-5 rounded-xl transition-colors">
+                                SELECT
+                            </button>
+</div>
+</div>
+</div>
+<div class="group flex gap-5 items-center">
+<div class="relative w-24 h-24 shrink-0 rounded-[22px] overflow-hidden bg-gray-100 shadow-sm">
+<img alt="Community urban garden with volunteers" class="h-full w-full object-cover" src="https://lh3.googleusercontent.com/aida-public/AB6AXuCorCHd6IlzmrN9HZyHOZEbOW8prViOUxkTPDIwGIqfdcM99Xg1nFnVo3peOH6fZTNLU9MrI_Hqsz7oB9EvSf0oSvHlzHWjpKTuUp-w01XYYAef8rkxNidiDG4fuoL7XA5IZDa1QjyYzfmuSBHDhFXbaJnUClkYNACsFG-UOw5x6VYYUtSYQKZjayh0eZ2S2vQ9U1h2akjVkiYrYqdaJfTavUsAtuUmiHBDuTEOPlBHADcG4s90NPsq2CaFkpaYNJwS4LoIXjFzUVo"/>
+</div>
+<div class="flex flex-col flex-1 min-w-0">
+<div class="flex justify-between items-start mb-0.5">
+<h3 class="font-extrabold text-[#111318] dark:text-white text-[16px] truncate pr-2">Green City Project</h3>
+<span class="material-symbols-outlined text-slate-300 dark:text-slate-600 text-[22px]">favorite</span>
+</div>
+<p class="text-slate-500 dark:text-slate-400 text-[13px] mb-3 line-clamp-1">Planting trees in urban heat islands.</p>
+<div class="flex items-center justify-between">
+<div class="flex items-center gap-1.5 text-[11px] font-extrabold text-primary">
+<span class="material-symbols-outlined text-[18px]">park</span>
+<span>1 TREE PLANTED</span>
+</div>
+<button class="bg-[#F8F9FB] dark:bg-slate-800 hover:bg-orange-50 active:bg-orange-100 text-primary text-[11px] font-extrabold py-2.5 px-5 rounded-xl transition-colors">
+                                SELECT
+                            </button>
+</div>
+</div>
+</div>
+<div class="group flex gap-5 items-center">
+<div class="relative w-24 h-24 shrink-0 rounded-[22px] overflow-hidden bg-gray-100 shadow-sm">
+<img alt="Ocean waves" class="h-full w-full object-cover" src="https://lh3.googleusercontent.com/aida-public/AB6AXuBnwX6kUqW_qu1py13r33snXkO4hzjNCzksImYOJLD29iGuxXK7hOGoXZArj1t-zBXzRj1dKUOmFM2hP3BY6COzj1jrpkglAfS0qyjc0C7zNdU3shChOooo6QS4JlkGC_cpFTdHls04wwk8alErPtXXWAMnP335zCWZM5c8oDHog76icIwZT-U_4kTsM-uVY0oOT-klDBOO9B-56JjyqqUJqw0Qo3JlVrpc2hKEWx51nOnPkjyLc_BhH6oUdgXohv3TFHGL4zmX8bk"/>
+</div>
+<div class="flex flex-col flex-1 min-w-0">
+<div class="flex justify-between items-start mb-0.5">
+<h3 class="font-extrabold text-[#111318] dark:text-white text-[16px] truncate pr-2">Clean Water Act</h3>
+<span class="material-symbols-outlined text-slate-300 dark:text-slate-600 text-[22px]">favorite</span>
+</div>
+<p class="text-slate-500 dark:text-slate-400 text-[13px] mb-3 line-clamp-1">Ensuring safe drinking water for all.</p>
+<div class="flex items-center justify-between">
+<div class="flex items-center gap-1.5 text-[11px] font-extrabold text-primary">
+<span class="material-symbols-outlined text-[18px]">water_drop</span>
+<span>100L CLEAN WATER</span>
+</div>
+<button class="bg-[#F8F9FB] dark:bg-slate-800 hover:bg-orange-50 active:bg-orange-100 text-primary text-[11px] font-extrabold py-2.5 px-5 rounded-xl transition-colors">
+                                SELECT
+                            </button>
+</div>
+</div>
+</div>
+</div>
+</section>
+</main>
+<nav class="absolute bottom-0 left-0 w-full z-20 border-t border-[#f0f2f4] dark:border-[#2a3441] bg-white/98 dark:bg-[#151c2b]/98 backdrop-blur-md px-12 pb-8 pt-4">
+<div class="flex justify-between items-center">
+<a class="flex flex-col items-center gap-1.5 text-primary" href="#">
+<span class="material-symbols-outlined" style="font-size: 26px; font-variation-settings: 'FILL' 1;">favorite</span>
+<p class="text-[10px] font-extrabold leading-normal tracking-widest uppercase">Causes</p>
+</a>
+<a class="flex flex-col items-center gap-1.5 text-slate-400 dark:text-slate-500 hover:text-primary transition-colors" href="#">
+<span class="material-symbols-outlined" style="font-size: 26px;">leaderboard</span>
+<p class="text-[10px] font-extrabold leading-normal tracking-widest uppercase">Impact</p>
+</a>
+<a class="flex flex-col items-center gap-1.5 text-slate-400 dark:text-slate-500 hover:text-primary transition-colors" href="#">
+<span class="material-symbols-outlined" style="font-size: 26px;">person</span>
+<p class="text-[10px] font-extrabold leading-normal tracking-widest uppercase">Account</p>
+</a>
+</div>
+</nav>
+</div>
+
+</body></html>

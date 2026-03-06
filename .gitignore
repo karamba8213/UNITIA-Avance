@@ -1,0 +1,44 @@
+# Flutter / Dart
+unitia_app/.dart_tool/
+unitia_app/.flutter-plugins
+unitia_app/.flutter-plugins-dependencies
+unitia_app/build/
+unitia_app/.packages
+unitia_app/pubspec.lock
+
+# Android
+unitia_app/android/.gradle/
+unitia_app/android/local.properties
+unitia_app/android/key.properties
+unitia_app/android/app/google-services.json
+unitia_app/android/app/debug.keystore
+
+# iOS
+unitia_app/ios/Pods/
+unitia_app/ios/.symlinks/
+unitia_app/ios/Flutter/Flutter.framework
+unitia_app/ios/Flutter/Flutter.podspec
+unitia_app/ios/GoogleService-Info.plist
+
+# Firebase / secrets
+firebase-admin.json
+**/google-services.json
+**/GoogleService-Info.plist
+.env
+*.env.*
+serviceAccountKey.json
+
+# Node
+scripts/node_modules/
+functions/node_modules/
+backend/node_modules/
+node_modules/
+
+# OS
+.DS_Store
+Thumbs.db
+
+# IDE
+.idea/
+.vscode/
+*.iml

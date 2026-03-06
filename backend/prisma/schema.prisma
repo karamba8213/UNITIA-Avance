@@ -1,0 +1,202 @@
+generator client {
+  provider = "prisma-client-js"
+}
+
+datasource db {
+  provider = "postgresql"
+  url      = env("DATABASE_URL")
+}
+
+enum Role {
+  RESTAURANT
+  CAUSE
+  ADMIN
+}
+
+enum OrderStatus {
+  PENDING
+  CONFIRMED
+  CANCELLED
+}
+
+enum DonationStatus {
+  PENDING
+  PAID
+  CONFIRMED
+  DISPUTED
+}
+
+enum PaymentStatus {
+  PENDING
+  CONFIRMED
+  REJECTED
+}
+
+model User {
+  id                String     @id @default(cuid())
+  email             String     @unique
+  password          String
+  role              Role
+  name              String
+  image             String?
+  provider          String?    // "google" | "apple" | null (email)
+  providerAccountId String?
+  createdAt         DateTime   @default(now())
+  updatedAt         DateTime   @updatedAt
+  restaurant        Restaurant?
+  cause             Cause?
+
+  @@index([email])
+  @@index([provider, providerAccountId])
+}
+
+model Restaurant {
+  id                 String     @id @default(cuid())
+  userId             String     @unique
+  user               User       @relation(fields: [userId], references: [id])
+  name               String
+  slug               String     @unique
+  description        String?
+  logo               String?
+  address            String?
+  phone              String?
+  donationPercentage Float      @default(5.0)
+  causeId            String?
+  cause              Cause?     @relation(fields: [causeId], references: [id])
+  isVerified         Boolean    @default(false)
+  isActive           Boolean    @default(true)
+  createdAt          DateTime   @default(now())
+  updatedAt          DateTime   @updatedAt
+  menuItems          MenuItem[]
+  orders             Order[]
+  donations          Donation[]
+  payments           Payment[]
+
+  @@index([slug])
+  @@index([causeId])
+}
+
+model Cause {
+  id           String       @id @default(cuid())
+  userId       String       @unique
+  user         User         @relation(fields: [userId], references: [id])
+  name         String
+  slug         String       @unique
+  description  String
+  story        String       @db.Text
+  logo         String?
+  images       String[]
+  targetAmount Float        @default(0)
+  isVerified   Boolean      @default(false)
+  isActive     Boolean      @default(true)
+  createdAt    DateTime     @default(now())
+  updatedAt    DateTime     @updatedAt
+  restaurants  Restaurant[]
+  orders       Order[]
+  donations    Donation[]
+  payments     Payment[]
+
+  @@index([slug])
+}
+
+model MenuItem {
+  id           String      @id @default(cuid())
+  restaurantId String
+  restaurant   Restaurant  @relation(fields: [restaurantId], references: [id])
+  name         String
+  description  String?
+  price        Float
+  category     String?
+  imageUrl     String?
+  isAvailable  Boolean     @default(true)
+  createdAt    DateTime    @default(now())
+  updatedAt    DateTime    @updatedAt
+  orderItems   OrderItem[]
+
+  @@index([restaurantId])
+}
+
+model Order {
+  id             String      @id @default(cuid())
+  restaurantId   String
+  restaurant     Restaurant  @relation(fields: [restaurantId], references: [id])
+  causeId        String
+  cause          Cause       @relation(fields: [causeId], references: [id])
+  customerName   String
+  customerEmail  String?
+  customerPhone  String?
+  notes          String?
+  subtotal       Float
+  donationAmount Float
+  status         OrderStatus @default(PENDING)
+  createdAt      DateTime    @default(now())
+  updatedAt      DateTime    @updatedAt
+  items          OrderItem[]
+  donation       Donation?
+
+  @@index([restaurantId, createdAt])
+  @@index([causeId])
+  @@index([customerEmail])
+}
+
+model OrderItem {
+  id         String    @id @default(cuid())
+  orderId    String
+  order      Order     @relation(fields: [orderId], references: [id])
+  menuItemId String?
+  menuItem   MenuItem? @relation(fields: [menuItemId], references: [id])
+  name       String
+  price      Float
+  quantity   Int
+
+  @@index([orderId])
+}
+
+model Donation {
+  id           String            @id @default(cuid())
+  restaurantId String
+  restaurant   Restaurant        @relation(fields: [restaurantId], references: [id])
+  causeId      String
+  cause        Cause             @relation(fields: [causeId], references: [id])
+  orderId      String            @unique
+  order        Order             @relation(fields: [orderId], references: [id])
+  amount       Float
+  status       DonationStatus    @default(PENDING)
+  paidAt       DateTime?
+  confirmedAt  DateTime?
+  notes        String?
+  createdAt    DateTime          @default(now())
+  updatedAt    DateTime          @updatedAt
+  payments     DonationPayment[]
+
+  @@index([restaurantId, status])
+  @@index([causeId, status])
+}
+
+model Payment {
+  id           String            @id @default(cuid())
+  restaurantId String
+  restaurant   Restaurant        @relation(fields: [restaurantId], references: [id])
+  causeId      String
+  cause        Cause             @relation(fields: [causeId], references: [id])
+  amount       Float
+  notes        String?
+  proofUrl     String?
+  status       PaymentStatus     @default(PENDING)
+  confirmedAt  DateTime?
+  createdAt    DateTime          @default(now())
+  updatedAt    DateTime          @updatedAt
+  donations    DonationPayment[]
+
+  @@index([restaurantId])
+  @@index([causeId])
+}
+
+model DonationPayment {
+  donationId String
+  donation   Donation @relation(fields: [donationId], references: [id])
+  paymentId  String
+  payment    Payment  @relation(fields: [paymentId], references: [id])
+
+  @@id([donationId, paymentId])
+}

@@ -1,0 +1,131 @@
+<!DOCTYPE html>
+
+<html lang="en"><head>
+<meta charset="utf-8"/>
+<meta content="width=device-width, initial-scale=1.0" name="viewport"/>
+<title>Suggest a Cause</title>
+<script src="https://cdn.tailwindcss.com?plugins=forms,container-queries"></script>
+<link href="https://fonts.googleapis.com/css2?family=Manrope:wght@400;500;600;700;800&amp;display=swap" rel="stylesheet"/>
+<link href="https://fonts.googleapis.com/css2?family=Material+Symbols+Outlined:wght,FILL@100..700,0..1&amp;display=swap" rel="stylesheet"/>
+<link href="https://fonts.googleapis.com/css2?family=Material+Symbols+Outlined:wght,FILL@100..700,0..1&amp;display=swap" rel="stylesheet"/>
+<script id="tailwind-config">
+        tailwind.config = {
+            darkMode: "class",
+            theme: {
+                extend: {
+                    colors: {
+                        "primary": "#f27f0d",
+                        "background-light": "#f8f7f5",
+                        "background-dark": "#221910",
+                    },
+                    fontFamily: {
+                        "display": ["Manrope", "sans-serif"]
+                    },
+                    borderRadius: {
+                        "DEFAULT": "0.25rem",
+                        "lg": "0.5rem",
+                        "xl": "0.75rem",
+                        "full": "9999px"
+                    },
+                },
+            },
+        }
+    </script>
+<style>
+        body {
+            font-family: 'Manrope', sans-serif;
+        }
+        .ios-status-bar {
+            height: 44px;
+        }
+    </style>
+<style>
+    body {
+      min-height: max(884px, 100dvh);
+    }
+  </style>
+  </head>
+<body class="bg-background-light dark:bg-background-dark text-[#181411] min-h-screen flex flex-col">
+<!-- iOS Status Bar Placeholder -->
+<div class="ios-status-bar w-full flex justify-between items-end px-8 pb-1 bg-background-light dark:bg-background-dark">
+<span class="text-xs font-bold">9:41</span>
+<div class="flex gap-1 items-center">
+<span class="material-symbols-outlined text-xs">signal_cellular_4_bar</span>
+<span class="material-symbols-outlined text-xs">wifi</span>
+<span class="material-symbols-outlined text-xs">battery_full</span>
+</div>
+</div>
+<!-- Header Navigation -->
+<header class="flex items-center bg-background-light dark:bg-background-dark p-4 justify-between sticky top-0 z-10">
+<button class="text-[#181411] dark:text-white flex size-10 items-center justify-center rounded-full hover:bg-black/5 transition-colors">
+<span class="material-symbols-outlined">arrow_back_ios_new</span>
+</button>
+<h1 class="text-[#181411] dark:text-white text-lg font-bold leading-tight tracking-tight flex-1 text-center pr-10">Suggest a Cause</h1>
+</header>
+<!-- Main Content -->
+<main class="flex-1 overflow-y-auto px-4 pb-24">
+<!-- Friendly Illustration/Hero Section -->
+<div class="mt-4 mb-8">
+<div class="w-full h-48 rounded-xl overflow-hidden relative bg-primary/10 flex items-center justify-center">
+<div class="absolute inset-0 bg-gradient-to-br from-primary/20 to-transparent"></div>
+<img alt="Friendly community collaboration illustration" class="w-full h-full object-cover" data-alt="Illustration of diverse people collaborating around a heart shape" src="https://lh3.googleusercontent.com/aida-public/AB6AXuBkNJxfKYSRjDE4Z5gXGRaWyZ20cZ-EVZWUa9rvSig2Xr0lknaLofCuRuLvpaixWqM9nsM23y_rth9xISL7wmLHs9y1gdroTwCYncwLSodTdDhL3Wbm-wqxfvAe7NrB4eBMlwjErJpQ4kN2oZUaAKqwMH7mokbtlZrDt2vty5Rn0Ix6qowh4IXKJjG-WZDq0-H_H0IAxkQfwKNK6DtF02CZnydeqNJTRh9UbPztN3nyyap2Yl5U2APiiPjMljmza-Wq5SIx1_fwJsM"/>
+</div>
+</div>
+<div class="mb-6">
+<h2 class="text-2xl font-extrabold text-[#181411] dark:text-white mb-2">Know a local cause?</h2>
+<p class="text-[#8a7560] dark:text-gray-400 text-sm">Help us grow our marketplace by suggesting a non-profit or community project that needs support.</p>
+</div>
+<!-- Form Card -->
+<div class="bg-white dark:bg-[#2d241b] rounded-xl p-5 shadow-sm border border-[#e6e0db] dark:border-[#3d3329]">
+<form action="#" class="space-y-5" method="POST">
+<!-- Cause Name -->
+<div class="flex flex-col gap-2">
+<label class="text-[#181411] dark:text-white text-sm font-semibold">Cause Name</label>
+<input class="w-full rounded-lg border-[#e6e0db] dark:border-[#3d3329] dark:bg-[#181411] dark:text-white focus:border-primary focus:ring-1 focus:ring-primary h-12 px-4 transition-all placeholder:text-[#8a7560]" placeholder="e.g. Downtown Food Bank" type="text"/>
+</div>
+<!-- Contact Email -->
+<div class="flex flex-col gap-2">
+<label class="text-[#181411] dark:text-white text-sm font-semibold">Contact Email</label>
+<input class="w-full rounded-lg border-[#e6e0db] dark:border-[#3d3329] dark:bg-[#181411] dark:text-white focus:border-primary focus:ring-1 focus:ring-primary h-12 px-4 transition-all placeholder:text-[#8a7560]" placeholder="hello@cause.org" type="email"/>
+</div>
+<!-- Why should they join? -->
+<div class="flex flex-col gap-2">
+<label class="text-[#181411] dark:text-white text-sm font-semibold">Why should they join?</label>
+<textarea class="w-full rounded-lg border-[#e6e0db] dark:border-[#3d3329] dark:bg-[#181411] dark:text-white focus:border-primary focus:ring-1 focus:ring-primary p-4 transition-all placeholder:text-[#8a7560] resize-none" placeholder="Tell us about their impact on the community..." rows="4"></textarea>
+</div>
+<!-- Submit Button -->
+<button class="w-full bg-primary hover:bg-primary/90 text-white font-bold py-4 rounded-xl transition-transform active:scale-[0.98] shadow-lg shadow-primary/20 mt-4" type="submit">
+                    Submit Suggestion
+                </button>
+</form>
+</div>
+<!-- Extra Info -->
+<div class="mt-8 flex items-center justify-center gap-2 text-[#8a7560] dark:text-gray-400 text-xs text-center px-8">
+<span class="material-symbols-outlined text-sm">verified_user</span>
+<span>Your referral helps local businesses give back to causes you care about.</span>
+</div>
+</main>
+<!-- Bottom Navigation Bar -->
+<nav class="fixed bottom-0 w-full bg-white dark:bg-[#221910] border-t border-[#f5f2f0] dark:border-[#3d3329] px-6 pb-8 pt-3 flex justify-between items-center z-20">
+<a class="flex flex-col items-center gap-1 group" href="#">
+<div class="text-primary flex h-8 items-center justify-center">
+<span class="material-symbols-outlined text-[28px]" style="font-variation-settings: 'FILL' 1, 'wght' 400, 'GRAD' 0, 'opsz' 24;">volunteer_activism</span>
+</div>
+<p class="text-primary text-[10px] font-bold leading-normal tracking-wider">CAUSES</p>
+</a>
+<a class="flex flex-col items-center gap-1 group" href="#">
+<div class="text-[#8a7560] group-hover:text-primary transition-colors flex h-8 items-center justify-center">
+<span class="material-symbols-outlined text-[28px]">bar_chart</span>
+</div>
+<p class="text-[#8a7560] group-hover:text-primary text-[10px] font-bold leading-normal tracking-wider transition-colors">IMPACT</p>
+</a>
+<a class="flex flex-col items-center gap-1 group" href="#">
+<div class="text-[#8a7560] group-hover:text-primary transition-colors flex h-8 items-center justify-center">
+<span class="material-symbols-outlined text-[28px]">account_circle</span>
+</div>
+<p class="text-[#8a7560] group-hover:text-primary text-[10px] font-bold leading-normal tracking-wider transition-colors">ACCOUNT</p>
+</a>
+</nav>
+<!-- iOS Home Indicator -->
+<div class="fixed bottom-1 left-1/2 -translate-x-1/2 w-32 h-1 bg-black/20 dark:bg-white/20 rounded-full z-30"></div>
+</body></html>

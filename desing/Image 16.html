@@ -1,0 +1,183 @@
+<!DOCTYPE html>
+<html lang="en"><head>
+<meta charset="utf-8"/>
+<meta content="width=device-width, initial-scale=1.0" name="viewport"/>
+<title>Impact Wallet - Local Collaboration</title>
+<link href="https://fonts.googleapis.com/css2?family=Manrope:wght@400;500;600;700;800&amp;display=swap" rel="stylesheet"/>
+<link href="https://fonts.googleapis.com/css2?family=Material+Symbols+Outlined:wght,FILL@100..700,0..1&amp;display=swap" rel="stylesheet"/>
+<script src="https://cdn.tailwindcss.com?plugins=forms,container-queries"></script>
+<script id="tailwind-config">
+        tailwind.config = {
+            darkMode: "class",
+            theme: {
+                extend: {
+                    colors: {
+                        "primary": "#FF6B00",
+                        "primary-dark": "#E65100",
+                        "background-light": "#f6f6f8",
+                        "background-dark": "#101622",
+                        "surface-light": "#ffffff",
+                        "surface-dark": "#1a2332",
+                        "text-primary-light": "#111318",
+                        "text-primary-dark": "#f0f2f4",
+                        "text-secondary-light": "#616f89",
+                        "text-secondary-dark": "#9ca3af",
+                    },
+                    fontFamily: {
+                        "display": ["Manrope", "sans-serif"]
+                    },
+                    borderRadius: { "DEFAULT": "0.25rem", "lg": "0.5rem", "xl": "0.75rem", "2xl": "1rem", "full": "9999px" },
+                },
+            },
+        }
+    </script>
+<style type="text/tailwindcss">
+        .no-scrollbar::-webkit-scrollbar {
+            display: none;
+        }
+        .no-scrollbar {
+            -ms-overflow-style: none;
+            scrollbar-width: none;
+        }
+        body {
+            min-height: max(884px, 100dvh);
+        }
+    </style>
+<style>
+    body {
+      min-height: max(884px, 100dvh);
+    }
+  </style>
+  </head>
+<body class="bg-background-light dark:bg-background-dark font-display text-text-primary-light dark:text-text-primary-dark antialiased transition-colors duration-200">
+<div class="relative flex h-full min-h-screen w-full flex-col overflow-hidden max-w-md mx-auto bg-background-light dark:bg-background-dark shadow-xl">
+<header class="sticky top-0 z-20 flex items-center justify-between px-4 py-3 bg-surface-light dark:bg-surface-dark border-b border-gray-100 dark:border-gray-800">
+<h1 class="text-lg font-bold">My Impact</h1>
+<button class="p-2 rounded-full hover:bg-gray-100 dark:hover:bg-gray-800 transition-colors text-text-primary-light dark:text-text-primary-dark">
+<span class="material-symbols-outlined">help_outline</span>
+</button>
+</header>
+<main class="flex-1 overflow-y-auto pb-24 no-scrollbar">
+<div class="p-4">
+<div class="w-full bg-surface-light dark:bg-surface-dark rounded-xl p-6 shadow-sm border border-gray-100 dark:border-gray-800 flex flex-col items-center text-center">
+<div class="mb-2 flex items-center justify-center h-12 w-12 rounded-full bg-primary/10 text-primary">
+<span class="material-symbols-outlined text-[28px]">savings</span>
+</div>
+<p class="text-sm font-medium text-text-secondary-light dark:text-text-secondary-dark uppercase tracking-wide">Total Impact Generated</p>
+<h2 class="mt-2 text-4xl font-extrabold text-primary dark:text-primary">$124.50</h2>
+<p class="mt-2 text-sm text-text-secondary-light dark:text-text-secondary-dark max-w-[260px]">
+                    Your orders have directly supported <span class="font-bold text-text-primary-light dark:text-text-primary-dark">12 local causes</span> in your community.
+                </p>
+<button class="mt-6 w-full py-3 px-4 bg-primary hover:bg-primary-dark text-white font-bold rounded-lg shadow-md hover:shadow-lg transition-all flex items-center justify-center gap-2">
+<span class="material-symbols-outlined text-[20px]">volunteer_activism</span>
+                    Refer a Cause
+                </button>
+</div>
+</div>
+<div class="px-4 pb-2 grid grid-cols-2 gap-3">
+<div class="bg-surface-light dark:bg-surface-dark p-4 rounded-xl shadow-sm border border-gray-100 dark:border-gray-800">
+<div class="flex items-start justify-between mb-2">
+<span class="material-symbols-outlined text-primary">local_cafe</span>
+<span class="text-xs font-semibold text-primary bg-primary/10 px-1.5 py-0.5 rounded">+2 this week</span>
+</div>
+<p class="text-2xl font-bold">48</p>
+<p class="text-xs text-text-secondary-light dark:text-text-secondary-dark">Contributions made</p>
+</div>
+<div class="bg-surface-light dark:bg-surface-dark p-4 rounded-xl shadow-sm border border-gray-100 dark:border-gray-800">
+<div class="flex items-start justify-between mb-2">
+<span class="material-symbols-outlined text-primary">groups</span>
+</div>
+<p class="text-2xl font-bold">5</p>
+<p class="text-xs text-text-secondary-light dark:text-text-secondary-dark">Causes supported</p>
+</div>
+</div>
+<div class="px-4 pt-6 pb-2 flex items-center justify-between">
+<h3 class="text-lg font-bold text-text-primary-light dark:text-text-primary-dark">Impact History</h3>
+<button class="text-sm font-semibold text-primary hover:text-primary-dark">See All</button>
+</div>
+<div class="px-4 space-y-3">
+<div class="flex items-center justify-between p-4 bg-surface-light dark:bg-surface-dark rounded-xl border border-gray-100 dark:border-gray-800 shadow-sm">
+<div class="flex items-center gap-3">
+<div class="h-10 w-10 rounded-full bg-orange-50 dark:bg-orange-900/20 flex items-center justify-center overflow-hidden shrink-0">
+<span class="material-symbols-outlined text-primary text-[20px]">lunch_dining</span>
+</div>
+<div class="flex flex-col">
+<p class="text-sm font-bold text-text-primary-light dark:text-text-primary-dark">Burger Joint</p>
+<div class="flex items-center gap-1 text-xs text-text-secondary-light dark:text-text-secondary-dark">
+<span>Nov 12</span>
+<span>•</span>
+<span class="truncate max-w-[120px]">Save the Puppies</span>
+</div>
+</div>
+</div>
+<div class="text-right">
+<p class="text-sm font-bold text-primary">+$1.20</p>
+<p class="text-[10px] font-medium text-gray-400 dark:text-gray-500">Completed</p>
+</div>
+</div>
+<div class="flex items-center justify-between p-4 bg-surface-light dark:bg-surface-dark rounded-xl border border-gray-100 dark:border-gray-800 shadow-sm">
+<div class="flex items-center gap-3">
+<div class="h-10 w-10 rounded-full bg-orange-50 dark:bg-orange-900/20 flex items-center justify-center overflow-hidden shrink-0">
+<span class="material-symbols-outlined text-primary text-[20px]">coffee</span>
+</div>
+<div class="flex flex-col">
+<p class="text-sm font-bold text-text-primary-light dark:text-text-primary-dark">Corner Coffee</p>
+<div class="flex items-center gap-1 text-xs text-text-secondary-light dark:text-text-secondary-dark">
+<span>Nov 10</span>
+<span>•</span>
+<span class="truncate max-w-[120px]">Local Food Bank</span>
+</div>
+</div>
+</div>
+<div class="text-right">
+<p class="text-sm font-bold text-primary">+$0.50</p>
+<p class="text-[10px] font-medium text-gray-400 dark:text-gray-500">Completed</p>
+</div>
+</div>
+<div class="flex items-center justify-between p-4 bg-surface-light dark:bg-surface-dark rounded-xl border border-gray-100 dark:border-gray-800 shadow-sm opacity-60">
+<div class="flex items-center gap-3">
+<div class="h-10 w-10 rounded-full bg-gray-100 dark:bg-gray-800 flex items-center justify-center overflow-hidden shrink-0">
+<span class="material-symbols-outlined text-gray-400 text-[20px]">grocery</span>
+</div>
+<div class="flex flex-col">
+<p class="text-sm font-bold text-text-primary-light dark:text-text-primary-dark">Green Market</p>
+<div class="flex items-center gap-1 text-xs text-text-secondary-light dark:text-text-secondary-dark">
+<span>Oct 28</span>
+<span>•</span>
+<span class="truncate max-w-[120px]">Reforestation Project</span>
+</div>
+</div>
+</div>
+<div class="text-right">
+<p class="text-sm font-bold text-text-secondary-light">+$1.50</p>
+<p class="text-[10px] font-medium text-gray-400 dark:text-gray-500">Pending</p>
+</div>
+</div>
+</div>
+<div class="h-10"></div>
+</main>
+<nav class="fixed bottom-0 z-30 w-full max-w-md border-t border-gray-100 dark:border-gray-800 bg-surface-light dark:bg-surface-dark px-6 pb-6 pt-3 shadow-[0_-4px_6px_-1px_rgba(0,0,0,0.05)]">
+<div class="flex justify-around items-end">
+<a class="group flex flex-col items-center justify-center gap-1" href="#">
+<div class="flex h-7 items-center justify-center text-text-secondary-light group-hover:text-primary dark:text-text-secondary-dark dark:group-hover:text-primary transition-colors">
+<span class="material-symbols-outlined text-[26px]">favorite</span>
+</div>
+<p class="text-[10px] font-bold uppercase tracking-wider text-text-secondary-light group-hover:text-primary dark:text-text-secondary-dark dark:group-hover:text-primary">Causes</p>
+</a>
+<a class="group flex flex-col items-center justify-center gap-1" href="#">
+<div class="flex h-7 items-center justify-center text-primary">
+<span class="material-symbols-outlined text-[28px] fill-current">wallet</span>
+</div>
+<p class="text-[10px] font-extrabold uppercase tracking-wider text-primary">Impact</p>
+</a>
+<a class="group flex flex-col items-center justify-center gap-1" href="#">
+<div class="flex h-7 items-center justify-center text-text-secondary-light group-hover:text-primary dark:text-text-secondary-dark dark:group-hover:text-primary transition-colors">
+<span class="material-symbols-outlined text-[26px]">person</span>
+</div>
+<p class="text-[10px] font-bold uppercase tracking-wider text-text-secondary-light group-hover:text-primary dark:text-text-secondary-dark dark:group-hover:text-primary">Account</p>
+</a>
+</div>
+</nav>
+</div>
+
+</body></html>
