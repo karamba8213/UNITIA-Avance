@@ -14,6 +14,23 @@ Plataforma que conecta restaurantes con causas sociales. Cada pedido genera una 
 
 ## Inicio rápido
 
+### 0. Recuperar las credenciales locales (Windows)
+
+El respaldo de esta PC está en `C:\unitia-credenciales-locales`. Los valores secretos
+no se guardan en GitHub. Después de clonar el repositorio, ejecutar desde su raíz:
+
+```powershell
+.\scripts\restore-local-credentials.ps1
+```
+
+Esto restaura `backend/.env`, `frontend/.env.local`, `firebase-admin.json` y las
+configuraciones de Firebase de Android e iOS a las rutas que usa el proyecto.
+Los archivos existentes se conservan y los restaurados siguen excluidos de Git.
+Para comprobar el respaldo sin copiar, agregar `-CheckOnly`. En otra computadora,
+copiar primero el respaldo y usar `-CredentialsRoot 'RUTA_DEL_RESPALDO'` si cambia
+su ubicación. No reemplazar los `.env` restaurados con las plantillas de ejemplo
+de los pasos siguientes; esas plantillas se usan cuando no hay credenciales.
+
 ### 1. Base de datos (Docker)
 ```bash
 docker-compose up -d
