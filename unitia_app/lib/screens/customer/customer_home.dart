@@ -1,5 +1,6 @@
 import 'package:flutter/material.dart';
 import 'package:provider/provider.dart';
+import '../../core/l10n/app_localizations.dart';
 import '../../core/theme/app_theme.dart';
 import '../../core/providers/auth_provider.dart';
 import 'customer_causes_screen.dart';
@@ -46,26 +47,26 @@ class _CustomerHomeState extends State<CustomerHome> {
           onDestinationSelected: (i) => setState(() => _tab = i),
           backgroundColor: Colors.transparent,
           elevation: 0,
-          destinations: const [
+          destinations: [
             NavigationDestination(
-              icon: Icon(Icons.volunteer_activism_outlined),
-              selectedIcon: Icon(Icons.volunteer_activism),
-              label: 'CAUSES',
+              icon: const Icon(Icons.volunteer_activism_outlined),
+              selectedIcon: const Icon(Icons.volunteer_activism),
+              label: AppLocalizations.of(context).tabCauses,
             ),
             NavigationDestination(
-              icon: Icon(Icons.storefront_outlined),
-              selectedIcon: Icon(Icons.storefront_rounded),
-              label: 'EATS',
+              icon: const Icon(Icons.storefront_outlined),
+              selectedIcon: const Icon(Icons.storefront_rounded),
+              label: AppLocalizations.of(context).tabEats,
             ),
             NavigationDestination(
-              icon: Icon(Icons.bar_chart_outlined),
-              selectedIcon: Icon(Icons.bar_chart_rounded),
-              label: 'IMPACT',
+              icon: const Icon(Icons.bar_chart_outlined),
+              selectedIcon: const Icon(Icons.bar_chart_rounded),
+              label: AppLocalizations.of(context).tabImpact,
             ),
             NavigationDestination(
-              icon: Icon(Icons.person_outline_rounded),
-              selectedIcon: Icon(Icons.person_rounded),
-              label: 'ACCOUNT',
+              icon: const Icon(Icons.person_outline_rounded),
+              selectedIcon: const Icon(Icons.person_rounded),
+              label: AppLocalizations.of(context).tabAccount,
             ),
           ],
         ),

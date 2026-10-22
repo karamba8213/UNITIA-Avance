@@ -10,13 +10,14 @@ const causeRoutes = require('./routes/causes')
 const orderRoutes = require('./routes/orders')
 const donationRoutes = require('./routes/donations')
 const publicRoutes = require('./routes/public')
+const customersRouter = require('./routes/customers')
 const errorHandler = require('./middleware/error')
 
 const app = express()
 
 app.use(helmet())
 app.use(cors({
-  origin: process.env.CORS_ORIGIN || 'http://localhost:3000',
+  origin: true,
   credentials: true,
 }))
 app.use(morgan(process.env.NODE_ENV === 'production' ? 'combined' : 'dev'))
@@ -30,11 +31,12 @@ app.use('/api/v1/causes', causeRoutes)
 app.use('/api/v1/orders', orderRoutes)
 app.use('/api/v1/donations', donationRoutes)
 app.use('/api/v1/public', publicRoutes)
+app.use('/api/v1/customers', customersRouter)
 
 app.use(errorHandler)
 
 const PORT = process.env.PORT || 4000
-app.listen(PORT, () => {
+app.listen(PORT, '0.0.0.0', () => {
   console.log(`Unitia API running on port ${PORT} [${process.env.NODE_ENV || 'development'}]`)
 })
 

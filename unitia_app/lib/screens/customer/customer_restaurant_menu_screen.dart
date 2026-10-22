@@ -25,8 +25,38 @@ class _CustomerRestaurantMenuScreenState
   @override
   void initState() {
     super.initState();
-    context.read<CartProvider>().setRestaurant(widget.restaurant);
+    WidgetsBinding.instance.addPostFrameCallback((_) => _checkCity());
     _load();
+  }
+
+  void _checkCity() {
+    final cart = context.read<CartProvider>();
+    final customerCity = cart.selectedCity;
+    final restaurantCity = widget.restaurant.city;
+    if (customerCity != null &&
+        restaurantCity != null &&
+        restaurantCity.toLowerCase() != customerCity.toLowerCase()) {
+      showDialog(
+        context: context,
+        barrierDismissible: false,
+        builder: (ctx) => AlertDialog(
+          shape: RoundedRectangleBorder(borderRadius: BorderRadius.circular(20)),
+          title: const Text('Restaurante no disponible',
+              style: TextStyle(fontWeight: FontWeight.w800)),
+          content: Text(
+            'Este restaurante está en $restaurantCity y tú estás en $customerCity.\n\nSolo puedes pedir de restaurantes en tu ciudad.',
+          ),
+          actions: [
+            ElevatedButton(
+              onPressed: () { Navigator.pop(ctx); Navigator.pop(context); },
+              child: const Text('Entendido'),
+            ),
+          ],
+        ),
+      );
+      return;
+    }
+    cart.setRestaurant(widget.restaurant);
   }
 
   Future<void> _load() async {
@@ -175,6 +205,15 @@ class _CustomerRestaurantMenuScreenState
   }
 
   void _openCart(BuildContext ctx) {
+    final cart = ctx.read<CartProvider>();
+    if (cart.selectedCause == null) {
+      ScaffoldMessenger.of(ctx).showSnackBar(const SnackBar(
+        content: Text('Elige una causa antes de ir al carrito'),
+        backgroundColor: Colors.redAccent,
+        behavior: SnackBarBehavior.floating,
+      ));
+      return;
+    }
     Navigator.push(ctx, MaterialPageRoute(builder: (_) => const CartScreen()));
   }
 }

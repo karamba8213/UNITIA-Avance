@@ -1,5 +1,6 @@
 import 'package:flutter/material.dart';
 import 'package:provider/provider.dart';
+import '../../core/l10n/app_localizations.dart';
 import '../../core/providers/auth_provider.dart';
 import '../../core/theme/app_theme.dart';
 import '../../widgets/common/app_button.dart';
@@ -15,6 +16,7 @@ class CustomerAccountScreen extends StatelessWidget {
     final auth = context.watch<AuthProvider>();
     final user = auth.user;
 
+    final l10n = AppLocalizations.of(context);
     return Scaffold(
       backgroundColor: AppColors.background,
       body: SafeArea(
@@ -26,8 +28,8 @@ class CustomerAccountScreen extends StatelessWidget {
               Row(
                 mainAxisAlignment: MainAxisAlignment.spaceBetween,
                 children: [
-                  const Text('Account Settings',
-                      style: TextStyle(fontSize: 22, fontWeight: FontWeight.w800)),
+                  Text(l10n.accountTitle,
+                      style: const TextStyle(fontSize: 22, fontWeight: FontWeight.w800)),
                   Container(
                     width: 40, height: 40,
                     decoration: BoxDecoration(
@@ -72,13 +74,13 @@ class CustomerAccountScreen extends StatelessWidget {
               ),
               const SizedBox(height: 14),
               Text(
-                user?.name ?? 'Usuario',
+                user?.name ?? l10n.accountDefaultName,
                 style: const TextStyle(fontSize: 18, fontWeight: FontWeight.w800),
               ),
               const SizedBox(height: 4),
-              const Text(
-                'Community Member',
-                style: TextStyle(fontSize: 13, color: AppColors.textSecondary),
+              Text(
+                l10n.accountCommunityMember,
+                style: const TextStyle(fontSize: 13, color: AppColors.textSecondary),
               ),
               const SizedBox(height: 28),
 
@@ -91,17 +93,17 @@ class CustomerAccountScreen extends StatelessWidget {
                       const Icon(Icons.person_outline_rounded,
                           color: AppColors.primary, size: 18),
                       const SizedBox(width: 8),
-                      const Text('PERSONAL INFORMATION',
-                          style: TextStyle(
+                      Text(l10n.accountPersonalInfo,
+                          style: const TextStyle(
                               fontSize: 11,
                               fontWeight: FontWeight.w800,
                               color: AppColors.primary,
                               letterSpacing: 0.5)),
                     ]),
                     const SizedBox(height: 20),
-                    _InfoField(label: 'Full Name', value: user?.name ?? ''),
-                    _InfoField(label: 'Email Address', value: user?.email ?? ''),
-                    _InfoField(label: 'Phone Number', value: '+1 (555) 000-1234'),
+                    _InfoField(label: l10n.accountFullName, value: user?.name ?? ''),
+                    _InfoField(label: l10n.accountEmail, value: user?.email ?? ''),
+                    _InfoField(label: l10n.accountPhone, value: ''),
                   ],
                 ),
               ),
@@ -109,7 +111,7 @@ class CustomerAccountScreen extends StatelessWidget {
               const SizedBox(height: 16),
 
               // ── Save button ───────────────────────────────────
-              AppButton(label: 'Save Changes', onPressed: () {}),
+              AppButton(label: l10n.accountSaveChanges, onPressed: () {}),
 
               const SizedBox(height: 12),
 
@@ -133,14 +135,14 @@ class CustomerAccountScreen extends StatelessWidget {
                     border: Border.all(color: AppColors.error.withOpacity(0.3)),
                     boxShadow: cardShadow,
                   ),
-                  child: const Row(
+                  child: Row(
                     mainAxisAlignment: MainAxisAlignment.center,
                     children: [
-                      Icon(Icons.logout_rounded, color: AppColors.error, size: 20),
-                      SizedBox(width: 8),
+                      const Icon(Icons.logout_rounded, color: AppColors.error, size: 20),
+                      const SizedBox(width: 8),
                       Text(
-                        'Logout',
-                        style: TextStyle(
+                        l10n.accountLogout,
+                        style: const TextStyle(
                           color: AppColors.error,
                           fontWeight: FontWeight.w700,
                           fontSize: 15,

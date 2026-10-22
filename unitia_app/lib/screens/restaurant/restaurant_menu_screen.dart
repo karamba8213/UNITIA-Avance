@@ -1,6 +1,8 @@
 import 'package:flutter/material.dart';
 import 'package:flutter/services.dart';
+import 'package:image_picker/image_picker.dart';
 import '../../core/services/firestore_service.dart';
+import '../../core/services/storage_service.dart';
 import '../../core/theme/app_theme.dart';
 
 class RestaurantMenuScreen extends StatefulWidget {
@@ -11,15 +13,179 @@ class RestaurantMenuScreen extends StatefulWidget {
 }
 
 class _RestaurantMenuScreenState extends State<RestaurantMenuScreen> {
-  final _fs = FirestoreService();
+  final _fs      = FirestoreService();
+  final _storage = StorageService();
+
+  static const _defaultCategories = [
+    'Entradas', 'Sopas', 'Ensaladas', 'Platos principales',
+    'Carnes', 'Mariscos', 'Pastas', 'Pizzas', 'Hamburguesas',
+    'Tacos', 'Vegetariano', 'Desayunos', 'Bebidas', 'Postres', 'Snacks',
+  ];
+
+  List<String> _categories = [..._defaultCategories]..sort();
+
+  @override
+  void initState() {
+    super.initState();
+    _loadCategories();
+  }
+
+  Future<void> _loadCategories() async {
+    final saved = await _fs.getMenuCategories(widget.uid);
+    if (saved.isEmpty) return;
+    final merged = {..._defaultCategories, ...saved}.toList()..sort();
+    if (mounted) setState(() => _categories = merged);
+  }
+
+  // Normaliza a Title Case
+  String _normalize(String s) => s
+      .trim()
+      .toLowerCase()
+      .split(' ')
+      .map((w) => w.isEmpty ? '' : w[0].toUpperCase() + w.substring(1))
+      .join(' ');
+
+  // Levenshtein distance
+  int _levenshtein(String a, String b) {
+    final al = a.toLowerCase(), bl = b.toLowerCase();
+    if (al == bl) return 0;
+    final m = al.length, n = bl.length;
+    final dp = List.generate(m + 1, (i) => List.generate(n + 1, (j) => j == 0 ? i : (i == 0 ? j : 0)));
+    for (int i = 1; i <= m; i++) {
+      for (int j = 1; j <= n; j++) {
+        dp[i][j] = al[i - 1] == bl[j - 1]
+            ? dp[i - 1][j - 1]
+            : 1 + [dp[i - 1][j], dp[i][j - 1], dp[i - 1][j - 1]].reduce((a, b) => a < b ? a : b);
+      }
+    }
+    return dp[m][n];
+  }
+
+  // Retorna categoría similar si existe (distancia <= 2), o null
+  String? _findSimilar(String name) {
+    final norm = name.toLowerCase();
+    for (final cat in _categories) {
+      if (cat.toLowerCase() == norm) return cat; // exacto
+      if (_levenshtein(norm, cat.toLowerCase()) <= 2) return cat;
+    }
+    return null;
+  }
+
+  // Retorna null si OK, o mensaje de error/advertencia
+  String? _validateCategory(String name) {
+    final norm = _normalize(name);
+    if (norm.isEmpty) return 'Escribe un nombre';
+    final similar = _findSimilar(norm);
+    if (similar != null) return 'Ya existe "$similar"';
+    return null;
+  }
+
+  Future<String?> _addCategory(String raw) async {
+    final name = _normalize(raw);
+    final error = _validateCategory(name);
+    if (error != null) return error;
+    final updated = [..._categories, name]..sort();
+    final custom = updated.where((c) => !_defaultCategories.contains(c)).toList();
+    await _fs.saveMenuCategories(widget.uid, custom);
+    if (mounted) setState(() => _categories = updated);
+    return null;
+  }
+
+  void _showManageCategories() {
+    showModalBottomSheet(
+      context: context,
+      isScrollControlled: true,
+      backgroundColor: Colors.white,
+      shape: const RoundedRectangleBorder(borderRadius: BorderRadius.vertical(top: Radius.circular(24))),
+      builder: (ctx) => StatefulBuilder(
+        builder: (ctx, setModal) {
+          final newCtrl = TextEditingController();
+          String? errorMsg;
+          return Padding(
+            padding: EdgeInsets.fromLTRB(20, 20, 20, MediaQuery.of(ctx).viewInsets.bottom + 20),
+            child: Column(
+              mainAxisSize: MainAxisSize.min,
+              crossAxisAlignment: CrossAxisAlignment.start,
+              children: [
+                const Text('Categorías del menú',
+                    style: TextStyle(fontSize: 18, fontWeight: FontWeight.w800)),
+                const SizedBox(height: 4),
+                const Text('Las predeterminadas no se pueden eliminar',
+                    style: TextStyle(fontSize: 12, color: AppColors.textMuted)),
+                const SizedBox(height: 16),
+                ConstrainedBox(
+                  constraints: const BoxConstraints(maxHeight: 260),
+                  child: ListView.builder(
+                    shrinkWrap: true,
+                    itemCount: _categories.length,
+                    itemBuilder: (_, i) {
+                      final cat = _categories[i];
+                      final isDefault = _defaultCategories.contains(cat);
+                      return ListTile(
+                        dense: true,
+                        contentPadding: EdgeInsets.zero,
+                        title: Text(cat, style: const TextStyle(fontSize: 14)),
+                        trailing: isDefault
+                            ? const Icon(Icons.lock_outline, size: 16, color: AppColors.textMuted)
+                            : IconButton(
+                                icon: const Icon(Icons.delete_outline, size: 18, color: AppColors.error),
+                                onPressed: () async {
+                                  final updated = _categories.where((c) => c != cat).toList();
+                                  final custom = updated.where((c) => !_defaultCategories.contains(c)).toList();
+                                  await _fs.saveMenuCategories(widget.uid, custom);
+                                  if (mounted) setState(() => _categories = updated);
+                                  setModal(() {});
+                                },
+                              ),
+                      );
+                    },
+                  ),
+                ),
+                const Divider(),
+                Row(children: [
+                  Expanded(
+                    child: TextField(
+                      controller: newCtrl,
+                      decoration: InputDecoration(
+                        hintText: 'Nueva categoría...',
+                        contentPadding: const EdgeInsets.symmetric(horizontal: 12, vertical: 10),
+                        errorText: errorMsg,
+                      ),
+                      textCapitalization: TextCapitalization.sentences,
+                      onChanged: (_) { if (errorMsg != null) setModal(() => errorMsg = null); },
+                    ),
+                  ),
+                  const SizedBox(width: 10),
+                  ElevatedButton(
+                    onPressed: () async {
+                      final err = await _addCategory(newCtrl.text);
+                      if (err != null) {
+                        setModal(() => errorMsg = err);
+                      } else {
+                        newCtrl.clear();
+                        setModal(() => errorMsg = null);
+                      }
+                    },
+                    style: ElevatedButton.styleFrom(minimumSize: const Size(0, 44)),
+                    child: const Text('Agregar'),
+                  ),
+                ]),
+              ],
+            ),
+          );
+        },
+      ),
+    );
+  }
 
   void _showForm({Map<String, dynamic>? item}) {
-    final nameCtrl = TextEditingController(text: item?['name'] ?? '');
+    final nameCtrl  = TextEditingController(text: item?['name'] ?? '');
     final priceCtrl = TextEditingController(text: item != null ? '${item['price']}' : '');
-    final catCtrl = TextEditingController(text: item?['category'] ?? '');
-    final descCtrl = TextEditingController(text: item?['description'] ?? '');
-    final imgCtrl = TextEditingController(text: item?['imageUrl'] ?? '');
-    bool saving = false;
+    final descCtrl  = TextEditingController(text: item?['description'] ?? '');
+    String? selectedCat = item?['category'] as String?;
+    String? imageUrl = item?['imageUrl'] as String?;
+    bool saving      = false;
+    bool uploading   = false;
 
     showModalBottomSheet(
       context: context,
@@ -27,62 +193,157 @@ class _RestaurantMenuScreenState extends State<RestaurantMenuScreen> {
       backgroundColor: Colors.white,
       shape: const RoundedRectangleBorder(borderRadius: BorderRadius.vertical(top: Radius.circular(24))),
       builder: (ctx) => StatefulBuilder(
-        builder: (ctx, setModal) => Padding(
-          padding: EdgeInsets.fromLTRB(20, 20, 20, MediaQuery.of(ctx).viewInsets.bottom + 20),
-          child: SingleChildScrollView(
-            child: Column(
-              crossAxisAlignment: CrossAxisAlignment.start,
-              mainAxisSize: MainAxisSize.min,
-              children: [
-                Text(item == null ? 'Nuevo item' : 'Editar item',
-                    style: const TextStyle(fontSize: 18, fontWeight: FontWeight.w800)),
-                const SizedBox(height: 16),
-                _field('Nombre *', nameCtrl),
-                _field('Precio *', priceCtrl,
-                    keyboard: const TextInputType.numberWithOptions(decimal: true),
-                    formatters: [FilteringTextInputFormatter.allow(RegExp(r'[\d.]'))]),
-                _field('Categoría', catCtrl, hint: 'Platos principales, Bebidas...'),
-                _field('Descripción', descCtrl, maxLines: 2),
-                _field('URL de imagen', imgCtrl, hint: 'https://...'),
-                const SizedBox(height: 8),
-                Row(children: [
-                  Expanded(child: OutlinedButton(
-                    onPressed: () => Navigator.pop(ctx),
-                    style: OutlinedButton.styleFrom(minimumSize: const Size(0, 44)),
-                    child: const Text('Cancelar'),
-                  )),
-                  const SizedBox(width: 12),
-                  Expanded(child: ElevatedButton(
-                    onPressed: saving ? null : () async {
-                      if (nameCtrl.text.isEmpty || priceCtrl.text.isEmpty) return;
-                      setModal(() => saving = true);
-                      final data = {
-                        'name': nameCtrl.text.trim(),
-                        'price': double.tryParse(priceCtrl.text) ?? 0.0,
-                        'category': catCtrl.text.trim(),
-                        'description': descCtrl.text.trim(),
-                        'imageUrl': imgCtrl.text.trim(),
-                      };
-                      try {
-                        if (item == null) {
-                          await _fs.addMenuItem(widget.uid, data);
-                        } else {
-                          await _fs.updateMenuItem(widget.uid, item['id'], data);
-                        }
-                        if (ctx.mounted) Navigator.pop(ctx);
-                      } catch (_) {}
-                      setModal(() => saving = false);
+        builder: (ctx, setModal) {
+          Future<void> pickImage(ImageSource source) async {
+            setModal(() => uploading = true);
+            try {
+              final path = 'restaurants/${widget.uid}/menu/${DateTime.now().millisecondsSinceEpoch}.jpg';
+              final url  = await _storage.pickAndUpload(path: path, source: source);
+              if (url != null) setModal(() => imageUrl = url);
+            } finally {
+              setModal(() => uploading = false);
+            }
+          }
+
+          return Padding(
+            padding: EdgeInsets.fromLTRB(20, 20, 20, MediaQuery.of(ctx).viewInsets.bottom + 20),
+            child: SingleChildScrollView(
+              child: Column(
+                crossAxisAlignment: CrossAxisAlignment.start,
+                mainAxisSize: MainAxisSize.min,
+                children: [
+                  Text(item == null ? 'Nuevo platillo' : 'Editar platillo',
+                      style: const TextStyle(fontSize: 18, fontWeight: FontWeight.w800)),
+                  const SizedBox(height: 16),
+
+                  // Imagen
+                  GestureDetector(
+                    onTap: uploading ? null : () => showModalBottomSheet(
+                      context: ctx,
+                      builder: (_) => SafeArea(
+                        child: Column(mainAxisSize: MainAxisSize.min, children: [
+                          ListTile(
+                            leading: const Icon(Icons.photo_library_rounded),
+                            title: const Text('Elegir de galería'),
+                            onTap: () { Navigator.pop(ctx); pickImage(ImageSource.gallery); },
+                          ),
+                          ListTile(
+                            leading: const Icon(Icons.camera_alt_rounded),
+                            title: const Text('Tomar foto'),
+                            onTap: () { Navigator.pop(ctx); pickImage(ImageSource.camera); },
+                          ),
+                        ]),
+                      ),
+                    ),
+                    child: Container(
+                      height: 120,
+                      width: double.infinity,
+                      decoration: BoxDecoration(
+                        color: AppColors.primary50,
+                        borderRadius: BorderRadius.circular(12),
+                        image: imageUrl != null && imageUrl!.isNotEmpty
+                            ? DecorationImage(image: NetworkImage(imageUrl!), fit: BoxFit.cover)
+                            : null,
+                      ),
+                      child: uploading
+                          ? const Center(child: CircularProgressIndicator(color: AppColors.primary))
+                          : imageUrl == null || imageUrl!.isEmpty
+                              ? const Column(mainAxisAlignment: MainAxisAlignment.center, children: [
+                                  Icon(Icons.add_a_photo_rounded, color: AppColors.primary, size: 32),
+                                  SizedBox(height: 6),
+                                  Text('Agregar foto', style: TextStyle(color: AppColors.primary, fontWeight: FontWeight.w600)),
+                                ])
+                              : Align(
+                                  alignment: Alignment.topRight,
+                                  child: Padding(
+                                    padding: const EdgeInsets.all(6),
+                                    child: CircleAvatar(
+                                      radius: 14,
+                                      backgroundColor: Colors.black45,
+                                      child: const Icon(Icons.edit, color: Colors.white, size: 14),
+                                    ),
+                                  ),
+                                ),
+                    ),
+                  ),
+                  const SizedBox(height: 14),
+
+                  _field('Nombre *', nameCtrl),
+                  _field('Precio *', priceCtrl,
+                      keyboard: const TextInputType.numberWithOptions(decimal: true),
+                      formatters: [FilteringTextInputFormatter.allow(RegExp(r'[\d.]'))]),
+
+                  // ── Categoría selector ──────────────────
+                  const Text('Categoría',
+                      style: TextStyle(fontSize: 13, fontWeight: FontWeight.w600, color: AppColors.textPrimary)),
+                  const SizedBox(height: 5),
+                  DropdownButtonFormField<String>(
+                    value: _categories.contains(selectedCat) ? selectedCat : null,
+                    hint: const Text('Selecciona una categoría'),
+                    decoration: const InputDecoration(),
+                    items: [
+                      ..._categories.map((c) => DropdownMenuItem(value: c, child: Text(c))),
+                      const DropdownMenuItem(
+                        value: '__nueva__',
+                        child: Row(children: [
+                          Icon(Icons.add, size: 16, color: AppColors.primary),
+                          SizedBox(width: 6),
+                          Text('Agregar otra categoría', style: TextStyle(color: AppColors.primary, fontWeight: FontWeight.w600)),
+                        ]),
+                      ),
+                    ],
+                    onChanged: (v) async {
+                      if (v == '__nueva__') {
+                        Navigator.pop(ctx);
+                        _showManageCategories();
+                      } else {
+                        setModal(() => selectedCat = v);
+                      }
                     },
-                    style: ElevatedButton.styleFrom(minimumSize: const Size(0, 44)),
-                    child: saving
-                        ? const SizedBox(width: 18, height: 18, child: CircularProgressIndicator(color: Colors.white, strokeWidth: 2))
-                        : const Text('Guardar'),
-                  )),
-                ]),
-              ],
+                  ),
+                  const SizedBox(height: 12),
+
+                  _field('Descripción', descCtrl, maxLines: 2),
+                  const SizedBox(height: 8),
+                  Row(children: [
+                    Expanded(child: OutlinedButton(
+                      onPressed: () => Navigator.pop(ctx),
+                      style: OutlinedButton.styleFrom(minimumSize: const Size(0, 44)),
+                      child: const Text('Cancelar'),
+                    )),
+                    const SizedBox(width: 12),
+                    Expanded(child: ElevatedButton(
+                      onPressed: saving || uploading ? null : () async {
+                        if (nameCtrl.text.isEmpty || priceCtrl.text.isEmpty) return;
+                        setModal(() => saving = true);
+                        final data = {
+                          'name':        nameCtrl.text.trim(),
+                          'price':       double.tryParse(priceCtrl.text) ?? 0.0,
+                          'category':    selectedCat ?? '',
+                          'description': descCtrl.text.trim(),
+                          'imageUrl':    imageUrl ?? '',
+                        };
+                        try {
+                          if (item == null) {
+                            await _fs.addMenuItem(widget.uid, data);
+                          } else {
+                            await _fs.updateMenuItem(widget.uid, item['id'], data);
+                          }
+                          if (ctx.mounted) Navigator.pop(ctx);
+                        } catch (_) {}
+                        setModal(() => saving = false);
+                      },
+                      style: ElevatedButton.styleFrom(minimumSize: const Size(0, 44)),
+                      child: saving
+                          ? const SizedBox(width: 18, height: 18, child: CircularProgressIndicator(color: Colors.white, strokeWidth: 2))
+                          : const Text('Guardar'),
+                    )),
+                  ]),
+                ],
+              ),
             ),
-          ),
-        ),
+          );
+        },
       ),
     );
   }
@@ -109,6 +370,11 @@ class _RestaurantMenuScreenState extends State<RestaurantMenuScreen> {
       appBar: AppBar(
         title: const Text('Menú'),
         actions: [
+          IconButton(
+            icon: const Icon(Icons.category_outlined, color: AppColors.textSecondary),
+            tooltip: 'Categorías',
+            onPressed: _showManageCategories,
+          ),
           TextButton.icon(
             onPressed: () => _showForm(),
             icon: const Icon(Icons.add, color: AppColors.primary),

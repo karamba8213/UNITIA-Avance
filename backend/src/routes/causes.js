@@ -32,6 +32,10 @@ const updateSchema = z.object({
   logo: z.string().url().optional(),
   images: z.array(z.string().url()).optional(),
   targetAmount: z.number().min(0).optional(),
+  bankName: z.string().optional(),
+  bankHolder: z.string().optional(),
+  bankClabe: z.string().optional(),
+  bankAccount: z.string().optional(),
 })
 
 router.patch('/me', authenticate, requireRole('CAUSE'), async (req, res, next) => {

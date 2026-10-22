@@ -1,5 +1,26 @@
 {
   "indexes": [
+    // ─── restaurants ──────────────────────────────────────────────────────────
+    // getActiveRestaurants(): isVerified == true, orderBy name
+    {
+      "collectionGroup": "restaurants",
+      "queryScope": "COLLECTION",
+      "fields": [
+        { "fieldPath": "isVerified", "order": "ASCENDING" },
+        { "fieldPath": "name",       "order": "ASCENDING" }
+      ]
+    },
+    // getActiveRestaurants(): isVerified + isActive + name
+    {
+      "collectionGroup": "restaurants",
+      "queryScope": "COLLECTION",
+      "fields": [
+        { "fieldPath": "isVerified", "order": "ASCENDING" },
+        { "fieldPath": "isActive",   "order": "ASCENDING" },
+        { "fieldPath": "name",       "order": "ASCENDING" }
+      ]
+    },
+
     // ─── causes ───────────────────────────────────────────────────────────────
     // getActiveCauses(): isVerified == true, orderBy name
     {
@@ -30,13 +51,12 @@
         { "fieldPath": "createdAt",    "order": "ASCENDING" }
       ]
     },
-    // getCustomerImpact(): customerEmail == x, status == confirmed, orderBy createdAt DESC
+    // getCustomerImpact(): customerEmail == x, orderBy createdAt DESC
     {
       "collectionGroup": "orders",
       "queryScope": "COLLECTION",
       "fields": [
         { "fieldPath": "customerEmail", "order": "ASCENDING" },
-        { "fieldPath": "status",        "order": "ASCENDING" },
         { "fieldPath": "createdAt",     "order": "DESCENDING" }
       ]
     },
@@ -79,6 +99,27 @@
       "fields": [
         { "fieldPath": "causeId",   "order": "ASCENDING" },
         { "fieldPath": "createdAt", "order": "DESCENDING" }
+      ]
+    },
+
+    // ─── direct_donations ─────────────────────────────────────────────────────
+    // directDonationsByCauseStream(): causeId == x, status == y, orderBy createdAt DESC
+    {
+      "collectionGroup": "direct_donations",
+      "queryScope": "COLLECTION",
+      "fields": [
+        { "fieldPath": "causeId", "order": "ASCENDING" },
+        { "fieldPath": "status",  "order": "ASCENDING" },
+        { "fieldPath": "createdAt", "order": "DESCENDING" }
+      ]
+    },
+    // directDonationsByCustomerStream(): customerId == x, orderBy createdAt DESC
+    {
+      "collectionGroup": "direct_donations",
+      "queryScope": "COLLECTION",
+      "fields": [
+        { "fieldPath": "customerId", "order": "ASCENDING" },
+        { "fieldPath": "createdAt",  "order": "DESCENDING" }
       ]
     },
 

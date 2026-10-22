@@ -39,9 +39,9 @@ export function getUserRole() {
 }
 
 export function formatCurrency(amount) {
-  return new Intl.NumberFormat('es-AR', { style: 'currency', currency: 'ARS' }).format(amount)
+  return new Intl.NumberFormat('es-MX', { style: 'currency', currency: 'MXN' }).format(amount)
 }
 
 export function formatDate(date) {
-  return new Intl.DateTimeFormat('es-AR', { day: '2-digit', month: 'short', year: 'numeric' }).format(new Date(date))
+  return new Intl.DateTimeFormat('es-MX', { day: '2-digit', month: 'short', year: 'numeric' }).format(new Date(date))
 }

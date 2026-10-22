@@ -1,10 +1,11 @@
 const prisma = require('../config/database')
+const { sendOrderNotification } = require('./whatsappService')
 
-async function createOrder({ restaurantId, items, customerName, customerEmail, customerPhone, notes }) {
-  const restaurant = await prisma.restaurant.findUnique({
-    where: { id: restaurantId },
-    include: { cause: true },
-  })
+async function createOrder({ restaurantId, causeId, items, customerName, customerEmail, customerPhone, notes, customerId, orderType, deliveryAddress, deliveryFee, paymentMethod, proofUrl }) {
+  const [restaurant, cause] = await Promise.all([
+    prisma.restaurant.findUnique({ where: { id: restaurantId }, select: { id: true, isActive: true, name: true, phone: true, donationPercentage: true } }),
+    prisma.cause.findUnique({ where: { id: causeId } }),
+  ])
 
   if (!restaurant || !restaurant.isActive) {
     const err = new Error('Restaurant not found or inactive')
@@ -12,8 +13,8 @@ async function createOrder({ restaurantId, items, customerName, customerEmail, c
     throw err
   }
 
-  if (!restaurant.causeId) {
-    const err = new Error('Restaurant has not selected a cause')
+  if (!cause || !cause.isActive) {
+    const err = new Error('Cause not found or inactive')
     err.status = 400
     throw err
   }
@@ -53,14 +54,18 @@ async function createOrder({ restaurantId, items, customerName, customerEmail, c
     const newOrder = await tx.order.create({
       data: {
         restaurantId,
-        causeId: restaurant.causeId,
+        causeId,
+        ...(customerId && { customerId }),
+        orderType: orderType || 'DELIVERY',
         customerName,
         customerEmail,
         customerPhone,
         notes,
+        deliveryAddress: orderType === 'PICKUP' ? null : (deliveryAddress || null),
+        deliveryFee: orderType === 'PICKUP' ? 0 : (deliveryFee || 0),
         subtotal: parseFloat(subtotal.toFixed(2)),
         donationAmount,
-        status: 'CONFIRMED',
+        status: 'PENDING',
         items: {
           create: orderItems,
         },
@@ -71,7 +76,7 @@ async function createOrder({ restaurantId, items, customerName, customerEmail, c
     await tx.donation.create({
       data: {
         restaurantId,
-        causeId: restaurant.causeId,
+        causeId,
         orderId: newOrder.id,
         amount: donationAmount,
         status: 'PENDING',
@@ -80,6 +85,18 @@ async function createOrder({ restaurantId, items, customerName, customerEmail, c
 
     return newOrder
   })
+
+  // Send WhatsApp notification to restaurant (non-blocking)
+  if (restaurant.phone) {
+    sendOrderNotification({
+      to: restaurant.phone,
+      restaurantName: restaurant.name,
+      customerName,
+      subtotal: parseFloat(subtotal.toFixed(2)),
+      donationAmount,
+      items: orderItems,
+    }).catch(() => {}) // already logs internally
+  }
 
   return order
 }

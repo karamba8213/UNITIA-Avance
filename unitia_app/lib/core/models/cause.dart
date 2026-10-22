@@ -12,6 +12,8 @@ class Cause {
   final bool isVerified;
   final DateTime createdAt;
   final int helpersCount;
+  final String category;
+  final Map<String, String>? bankInfo; // keys: banco, titular, clabe
 
   const Cause({
     required this.id,
@@ -27,6 +29,8 @@ class Cause {
     required this.isVerified,
     required this.createdAt,
     this.helpersCount = 0,
+    this.category = 'General',
+    this.bankInfo,
   });
 
   double get progress =>
@@ -48,6 +52,10 @@ class Cause {
             ? (m['createdAt'] as dynamic).toDate()
             : DateTime.now(),
         helpersCount: (m['helpersCount'] ?? 0) as int,
+        category: m['category'] ?? 'General',
+        bankInfo: m['bankInfo'] != null
+            ? Map<String, String>.from(m['bankInfo'] as Map)
+            : null,
       );
 
   Map<String, dynamic> toMap() => {
@@ -63,5 +71,6 @@ class Cause {
         'isVerified': isVerified,
         'createdAt': createdAt,
         'helpersCount': helpersCount,
+        'category': category,
       };
 }

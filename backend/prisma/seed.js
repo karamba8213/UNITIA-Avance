@@ -124,12 +124,25 @@ async function main() {
     })
   }
 
+  // --- CUSTOMER ---
+  const customerUser = await prisma.user.upsert({
+    where: { email: 'cliente@unitia.test' },
+    update: {},
+    create: { email: 'cliente@unitia.test', password: hash, name: 'Cliente Test', role: 'CUSTOMER' },
+  })
+  await prisma.customer.upsert({
+    where: { userId: customerUser.id },
+    update: {},
+    create: { userId: customerUser.id, phone: '+52 55 1234 5678' },
+  })
+
   console.log('Seed complete.')
   console.log('Test accounts (password: password123):')
-  console.log('  Restaurant: lafamiliar@unitia.test  → /r/la-familiar')
+  console.log('  Restaurant: lafamiliar@unitia.test   → /r/la-familiar')
   console.log('  Restaurant: elrinconcito@unitia.test → /r/el-rinconcito')
-  console.log('  Cause:      comedor@unitia.test      → /c/comedor-esperanza')
-  console.log('  Cause:      refugio@unitia.test      → /c/refugio-verde')
+  console.log('  Cause:      comedor@unitia.test       → /c/comedor-esperanza')
+  console.log('  Cause:      refugio@unitia.test       → /c/refugio-verde')
+  console.log('  Customer:   cliente@unitia.test')
 }
 
 main()

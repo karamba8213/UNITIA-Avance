@@ -8,7 +8,7 @@ async function getRestaurantDonations(restaurantId, { status, page = 1, limit = 
     prisma.donation.findMany({
       where,
       include: {
-        cause: { select: { name: true, slug: true, logo: true } },
+        cause: { select: { name: true, slug: true, logo: true, bankName: true, bankHolder: true, bankClabe: true, bankAccount: true } },
         order: { select: { createdAt: true, customerName: true, subtotal: true } },
       },
       orderBy: { createdAt: 'desc' },
@@ -54,7 +54,7 @@ async function getCauseDonations(causeId, { status, page = 1, limit = 20 } = {})
   return { donations, total, page, limit, pages: Math.ceil(total / limit), summary }
 }
 
-async function markDonationPaid(donationId, restaurantId, notes) {
+async function markDonationPaid(donationId, restaurantId, { notes, paymentMethod, proofUrl } = {}) {
   const donation = await prisma.donation.findUnique({ where: { id: donationId } })
 
   if (!donation) {
@@ -75,7 +75,13 @@ async function markDonationPaid(donationId, restaurantId, notes) {
 
   return prisma.donation.update({
     where: { id: donationId },
-    data: { status: 'PAID', paidAt: new Date(), notes },
+    data: {
+      status: 'PAID',
+      paidAt: new Date(),
+      notes,
+      paymentMethod: paymentMethod || 'CASH',
+      proofUrl: proofUrl || null,
+    },
   })
 }
 
@@ -104,9 +110,38 @@ async function confirmDonationReceived(donationId, causeId) {
   })
 }
 
+async function disputeDonation(donationId, causeId, { reason } = {}) {
+  const donation = await prisma.donation.findUnique({ where: { id: donationId } })
+
+  if (!donation) {
+    const err = new Error('Donation not found')
+    err.status = 404
+    throw err
+  }
+  if (donation.causeId !== causeId) {
+    const err = new Error('Not authorized to dispute this donation')
+    err.status = 403
+    throw err
+  }
+  if (donation.status !== 'PAID') {
+    const err = new Error(`Cannot dispute donation — current status: ${donation.status}`)
+    err.status = 400
+    throw err
+  }
+
+  return prisma.donation.update({
+    where: { id: donationId },
+    data: {
+      status: 'DISPUTED',
+      notes: reason ? `[DISPUTA] ${reason}` : '[DISPUTA] La causa reportó no haber recibido el pago',
+    },
+  })
+}
+
 module.exports = {
   getRestaurantDonations,
   getCauseDonations,
   markDonationPaid,
   confirmDonationReceived,
+  disputeDonation,
 }

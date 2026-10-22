@@ -1,10 +1,13 @@
 import 'package:flutter/material.dart';
+import 'package:flutter/services.dart';
 import 'package:percent_indicator/percent_indicator.dart';
+import '../../core/l10n/app_localizations.dart';
 import '../../core/models/cause.dart';
 import '../../core/models/cause_update.dart';
 import '../../core/services/firestore_service.dart';
 import '../../core/theme/app_theme.dart';
 import '../../widgets/common/app_card.dart';
+import 'direct_donation_screen.dart';
 
 class CauseDetailScreen extends StatelessWidget {
   final Cause cause;
@@ -207,6 +210,10 @@ class CauseDetailScreen extends StatelessWidget {
                     const SizedBox(height: 20),
                   ],
 
+                  // ── Direct donation ───────────────────────────
+                  _DirectDonateSection(cause: cause),
+                  const SizedBox(height: 20),
+
                   // ── Updates ───────────────────────────────────
                   const Text('Actualizaciones',
                       style: TextStyle(
@@ -228,6 +235,154 @@ class CauseDetailScreen extends StatelessWidget {
     if (v >= 1000000) return '\$${(v / 1000000).toStringAsFixed(1)}M';
     if (v >= 1000)    return '\$${(v / 1000).toStringAsFixed(1)}K';
     return '\$${v.toStringAsFixed(0)}';
+  }
+}
+
+// ── Direct donate section ──────────────────────────────────────────────────────
+class _DirectDonateSection extends StatelessWidget {
+  final Cause cause;
+  const _DirectDonateSection({required this.cause});
+
+  @override
+  Widget build(BuildContext context) {
+    final l10n = AppLocalizations.of(context);
+    final bank = cause.bankInfo;
+    final hasBank =
+        bank != null && (bank['clabe']?.isNotEmpty ?? false);
+
+    return Column(
+      crossAxisAlignment: CrossAxisAlignment.start,
+      children: [
+        const Text('Donación directa',
+            style: TextStyle(fontSize: 17, fontWeight: FontWeight.w800)),
+        const SizedBox(height: 10),
+        AppCard(
+          child: Column(
+            crossAxisAlignment: CrossAxisAlignment.start,
+            children: [
+              if (hasBank) ...[
+                Row(children: [
+                  const Icon(Icons.account_balance_rounded,
+                      color: AppColors.primary, size: 16),
+                  const SizedBox(width: 8),
+                  Text(l10n.directDonationBankInfo,
+                      style: const TextStyle(
+                          fontSize: 11,
+                          fontWeight: FontWeight.w800,
+                          color: AppColors.primary,
+                          letterSpacing: 0.5)),
+                ]),
+                const SizedBox(height: 14),
+                _DetailBankRow(label: l10n.directDonationBank,
+                    value: bank['banco'] ?? ''),
+                _DetailBankRow(label: l10n.directDonationHolder,
+                    value: bank['titular'] ?? ''),
+                _DetailBankRow(
+                  label: l10n.directDonationClabe,
+                  value: bank['clabe'] ?? '',
+                  copyable: true,
+                ),
+                const SizedBox(height: 4),
+              ] else ...[
+                const Text(
+                  'Esta causa aún no ha configurado sus datos bancarios.',
+                  style: TextStyle(
+                      fontSize: 13,
+                      color: AppColors.textSecondary,
+                      height: 1.4),
+                ),
+                const SizedBox(height: 12),
+              ],
+              GestureDetector(
+                onTap: () => Navigator.push(
+                  context,
+                  MaterialPageRoute(
+                    builder: (_) => DirectDonationScreen(cause: cause),
+                  ),
+                ),
+                child: Container(
+                  width: double.infinity,
+                  height: 48,
+                  decoration: BoxDecoration(
+                    color: hasBank ? AppColors.primary : AppColors.border,
+                    borderRadius: BorderRadius.circular(14),
+                  ),
+                  child: Row(
+                    mainAxisAlignment: MainAxisAlignment.center,
+                    children: [
+                      Icon(Icons.volunteer_activism_rounded,
+                          color: hasBank
+                              ? Colors.white
+                              : AppColors.textSecondary,
+                          size: 18),
+                      const SizedBox(width: 8),
+                      Text(
+                        l10n.directDonateButton,
+                        style: TextStyle(
+                          color: hasBank
+                              ? Colors.white
+                              : AppColors.textSecondary,
+                          fontWeight: FontWeight.w700,
+                          fontSize: 15,
+                        ),
+                      ),
+                    ],
+                  ),
+                ),
+              ),
+            ],
+          ),
+        ),
+      ],
+    );
+  }
+}
+
+class _DetailBankRow extends StatelessWidget {
+  final String label;
+  final String value;
+  final bool copyable;
+  const _DetailBankRow(
+      {required this.label, required this.value, this.copyable = false});
+
+  @override
+  Widget build(BuildContext context) {
+    return Padding(
+      padding: const EdgeInsets.only(bottom: 10),
+      child: Row(
+        crossAxisAlignment: CrossAxisAlignment.start,
+        children: [
+          SizedBox(
+            width: 68,
+            child: Text(label,
+                style: const TextStyle(
+                    fontSize: 12,
+                    color: AppColors.textSecondary,
+                    fontWeight: FontWeight.w500)),
+          ),
+          Expanded(
+            child: Text(value,
+                style: const TextStyle(
+                    fontSize: 13, fontWeight: FontWeight.w700)),
+          ),
+          if (copyable)
+            GestureDetector(
+              onTap: () {
+                Clipboard.setData(ClipboardData(text: value));
+                ScaffoldMessenger.of(context).showSnackBar(const SnackBar(
+                  content: Text('Copiado'),
+                  duration: Duration(seconds: 1),
+                ));
+              },
+              child: const Padding(
+                padding: EdgeInsets.only(left: 8),
+                child: Icon(Icons.copy_rounded,
+                    size: 15, color: AppColors.primary),
+              ),
+            ),
+        ],
+      ),
+    );
   }
 }
 

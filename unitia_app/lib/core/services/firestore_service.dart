@@ -29,9 +29,12 @@ class FirestoreService {
           .doc(restaurantId)
           .collection('menu')
           .where('isAvailable', isEqualTo: true)
-          .orderBy('category')
           .snapshots()
-          .map((s) => s.docs.map((d) => {'id': d.id, ...d.data()}).toList());
+          .map((s) {
+            final items = s.docs.map((d) => {'id': d.id, ...d.data()}).toList();
+            items.sort((a, b) => (a['category'] as String? ?? '').compareTo(b['category'] as String? ?? ''));
+            return items;
+          });
 
   Future<void> addMenuItem(String restaurantId, Map<String, dynamic> data) =>
       _db
@@ -50,6 +53,15 @@ class FirestoreService {
           .collection('menu')
           .doc(itemId)
           .update({'isAvailable': false});
+
+  Future<List<String>> getMenuCategories(String restaurantId) async {
+    final s = await _db.collection('restaurants').doc(restaurantId).get();
+    final saved = List<String>.from(s.data()?['menuCategories'] ?? []);
+    return saved;
+  }
+
+  Future<void> saveMenuCategories(String restaurantId, List<String> categories) =>
+      _db.collection('restaurants').doc(restaurantId).update({'menuCategories': categories});
 
   // ─── CAUSE ────────────────────────────────────────────────
 
@@ -104,6 +116,7 @@ class FirestoreService {
     required List<Map<String, dynamic>> items,
     required double subtotal,
     required double donationAmount,
+    double deliveryFee = 0.0,
   }) async {
     final batch = _db.batch();
 
@@ -123,6 +136,7 @@ class FirestoreService {
       'items': items,
       'subtotal': subtotal,
       'donationAmount': donationAmount,
+      'deliveryFee': deliveryFee,
       'status': 'pending',
       'donationStatus': 'pending',
       'createdAt': FieldValue.serverTimestamp(),
@@ -192,14 +206,27 @@ class FirestoreService {
           .snapshots()
           .map((s) => s.docs.map((d) => {'id': d.id, ...d.data()}).toList());
 
-  Future<void> markDonationPaid(String donationId, String orderId, {String? notes}) async {
+  Future<void> markDonationPaid(String donationId, String orderId,
+      {String? notes, String? paymentMethod}) async {
     final batch = _db.batch();
     batch.update(_db.collection('donations').doc(donationId), {
       'status': 'paid',
       'paidAt': FieldValue.serverTimestamp(),
       if (notes != null) 'notes': notes,
+      if (paymentMethod != null) 'paymentMethod': paymentMethod,
     });
     batch.update(_db.collection('orders').doc(orderId), {'donationStatus': 'paid'});
+    await batch.commit();
+  }
+
+  Future<void> disputeDonationPayment(String donationId, String orderId) async {
+    final batch = _db.batch();
+    batch.update(_db.collection('donations').doc(donationId), {
+      'status': 'pending',
+      'disputedAt': FieldValue.serverTimestamp(),
+      'paymentMethod': FieldValue.delete(),
+    });
+    batch.update(_db.collection('orders').doc(orderId), {'donationStatus': 'pending'});
     await batch.commit();
   }
 
@@ -313,10 +340,14 @@ class FirestoreService {
     final snap = await _db
         .collection('restaurants')
         .where('isVerified', isEqualTo: true)
+        .where('isActive', isEqualTo: true)
         .orderBy('name')
         .get();
     return snap.docs.map((d) => Restaurant.fromMap(d.id, d.data())).toList();
   }
+
+  Future<void> setRestaurantActive(String restaurantId, bool isActive) =>
+      _db.collection('restaurants').doc(restaurantId).update({'isActive': isActive});
 
   Future<List<Map<String, dynamic>>> getMenuItems(String restaurantId) async {
     final snap = await _db
@@ -324,9 +355,10 @@ class FirestoreService {
         .doc(restaurantId)
         .collection('menu')
         .where('isAvailable', isEqualTo: true)
-        .orderBy('category')
         .get();
-    return snap.docs.map((d) => {'id': d.id, ...d.data()}).toList();
+    final items = snap.docs.map((d) => {'id': d.id, ...d.data()}).toList();
+    items.sort((a, b) => (a['category'] as String? ?? '').compareTo(b['category'] as String? ?? ''));
+    return items;
   }
 
   Stream<Order?> orderStream(String orderId) => _db
@@ -378,6 +410,292 @@ class FirestoreService {
     };
   }
 
+  // ─── ORDER CHAT (restaurante ↔ cliente) ───────────────────
+
+  Stream<List<Map<String, dynamic>>> orderChatStream(String orderId) => _db
+      .collection('orders')
+      .doc(orderId)
+      .collection('chat')
+      .orderBy('createdAt')
+      .snapshots()
+      .map((s) => s.docs.map((d) => {'id': d.id, ...d.data()}).toList());
+
+  Future<void> sendOrderChatMessage({
+    required String orderId,
+    required String senderId,
+    required String senderRole,
+    required String senderName,
+    required String text,
+  }) =>
+      _db.collection('orders').doc(orderId).collection('chat').add({
+        'senderId': senderId,
+        'senderRole': senderRole,
+        'senderName': senderName,
+        'text': text,
+        'createdAt': FieldValue.serverTimestamp(),
+      });
+
+  // ─── DONATION CHAT ────────────────────────────────────────
+
+  Stream<List<Map<String, dynamic>>> donationChatStream(String donationId) => _db
+      .collection('donations')
+      .doc(donationId)
+      .collection('chat')
+      .orderBy('createdAt')
+      .snapshots()
+      .map((s) => s.docs.map((d) => {'id': d.id, ...d.data()}).toList());
+
+  Future<void> sendChatMessage({
+    required String donationId,
+    required String senderId,
+    required String senderRole,
+    required String senderName,
+    required String text,
+    String? imageUrl,
+  }) =>
+      _db.collection('donations').doc(donationId).collection('chat').add({
+        'senderId': senderId,
+        'senderRole': senderRole,
+        'senderName': senderName,
+        'text': text,
+        if (imageUrl != null) 'imageUrl': imageUrl,
+        'createdAt': FieldValue.serverTimestamp(),
+      });
+
+  Stream<Map<String, dynamic>?> donationStream(String donationId) => _db
+      .collection('donations')
+      .doc(donationId)
+      .snapshots()
+      .map((s) => s.exists ? {'id': s.id, ...s.data()!} : null);
+
+  // ─── CREDITS ──────────────────────────────────────────────
+
+  /// Stream of credit balance for a restaurant.
+  Stream<double> creditBalanceStream(String restaurantId) => _db
+      .collection('restaurants')
+      .doc(restaurantId)
+      .snapshots()
+      .map((s) => (s.data()?['creditBalance'] ?? 0.0).toDouble());
+
+  /// Deduct 1% of subtotal as commission when an order is confirmed.
+  Future<void> deductCommission(String restaurantId, double subtotal) async {
+    final commission = subtotal * 0.01;
+    final now = DateTime.now();
+    final today = DateTime(now.year, now.month, now.day);
+
+    final snap = await _db.collection('restaurants').doc(restaurantId).get();
+    final currentBalance = (snap.data()?['creditBalance'] ?? 0.0).toDouble();
+    final newBalance = currentBalance - commission;
+
+    final Map<String, dynamic> updates = {
+      'creditBalance': FieldValue.increment(-commission),
+    };
+
+    // Set negativeBalanceDate if going negative for the first time today
+    if (newBalance <= 0 && currentBalance > 0) {
+      updates['negativeBalanceDate'] = Timestamp.fromDate(today);
+    }
+
+    await _db.collection('restaurants').doc(restaurantId).update(updates);
+
+    // Log transaction
+    await _db
+        .collection('restaurants')
+        .doc(restaurantId)
+        .collection('creditTransactions')
+        .add({
+      'type': 'commission',
+      'amount': -commission,
+      'createdAt': FieldValue.serverTimestamp(),
+    });
+  }
+
+  /// Add credits after a successful IAP purchase.
+  Future<void> addCredits(
+    String restaurantId,
+    double amount,
+    String transactionId,
+    String productId,
+  ) async {
+    await _db.collection('restaurants').doc(restaurantId).update({
+      'creditBalance': FieldValue.increment(amount),
+    });
+    await _db
+        .collection('restaurants')
+        .doc(restaurantId)
+        .collection('creditTransactions')
+        .add({
+      'type': 'purchase',
+      'amount': amount,
+      'transactionId': transactionId,
+      'productId': productId,
+      'createdAt': FieldValue.serverTimestamp(),
+    });
+  }
+
+  /// Stream of the last 30 credit transactions for a restaurant.
+  Stream<List<Map<String, dynamic>>> creditTransactionsStream(
+          String restaurantId) =>
+      _db
+          .collection('restaurants')
+          .doc(restaurantId)
+          .collection('creditTransactions')
+          .orderBy('createdAt', descending: true)
+          .limit(30)
+          .snapshots()
+          .map((s) =>
+              s.docs.map((d) => {'id': d.id, ...d.data()}).toList());
+
+  // ─── ADMIN ────────────────────────────────────────────────
+
+  /// Devuelve todos los restaurantes (para el panel admin).
+  Future<List<Map<String, dynamic>>> adminGetAllRestaurants() async {
+    final snap = await _db
+        .collection('restaurants')
+        .orderBy('name')
+        .get();
+    return snap.docs.map((d) => {'id': d.id, ...d.data()}).toList();
+  }
+
+  /// Agrega créditos manualmente desde el admin.
+  Future<void> adminAddCredits(String restaurantId, double amount, String note) async {
+    await _db.collection('restaurants').doc(restaurantId).update({
+      'creditBalance': FieldValue.increment(amount),
+    });
+    await _db
+        .collection('restaurants')
+        .doc(restaurantId)
+        .collection('creditTransactions')
+        .add({
+      'type': 'admin',
+      'amount': amount,
+      'note': note,
+      'createdAt': FieldValue.serverTimestamp(),
+    });
+  }
+
+  /// Devuelve todas las comisiones con [status] dado, de todos los restaurantes.
+  Future<List<Map<String, dynamic>>> getAdminCommissions({
+    required String status,
+  }) async {
+    final snap = await _db
+        .collectionGroup('weeks')
+        .where('status', isEqualTo: status)
+        .orderBy('weekStart', descending: true)
+        .get();
+    return snap.docs.map((d) {
+      final restaurantId = d.reference.parent.parent?.id ?? '';
+      return {'weekId': d.id, 'restaurantId': restaurantId, ...d.data()};
+    }).toList();
+  }
+
+  Future<void> adminConfirmCommission({
+    required String restaurantId,
+    required String weekId,
+  }) =>
+      _db
+          .collection('commissions')
+          .doc(restaurantId)
+          .collection('weeks')
+          .doc(weekId)
+          .update({
+        'status': 'confirmed',
+        'confirmedAt': FieldValue.serverTimestamp(),
+      });
+
+  // ─── DIRECT DONATIONS ─────────────────────────────────────
+
+  Future<String> createDirectDonation({
+    required String causeId,
+    required String causeName,
+    required String customerName,
+    required String customerEmail,
+    String? customerId,
+    required double proposedAmount,
+    String? notes,
+  }) async {
+    final ref = _db.collection('direct_donations').doc();
+    await ref.set({
+      'causeId': causeId,
+      'causeName': causeName,
+      'customerId': customerId,
+      'customerName': customerName,
+      'customerEmail': customerEmail,
+      'proposedAmount': proposedAmount,
+      'confirmedAmount': null,
+      'status': 'pending',
+      if (notes != null && notes.isNotEmpty) 'notes': notes,
+      'createdAt': FieldValue.serverTimestamp(),
+    });
+    return ref.id;
+  }
+
+  Stream<List<Map<String, dynamic>>> directDonationsByCauseStream(
+          String causeId, String status) =>
+      _db
+          .collection('direct_donations')
+          .where('causeId', isEqualTo: causeId)
+          .where('status', isEqualTo: status)
+          .orderBy('createdAt', descending: true)
+          .snapshots()
+          .map((s) => s.docs.map((d) => {'id': d.id, ...d.data()}).toList());
+
+  Stream<List<Map<String, dynamic>>> directDonationsByCustomerStream(
+          String customerId) =>
+      _db
+          .collection('direct_donations')
+          .where('customerId', isEqualTo: customerId)
+          .orderBy('createdAt', descending: true)
+          .snapshots()
+          .map((s) => s.docs.map((d) => {'id': d.id, ...d.data()}).toList());
+
+  Future<void> confirmDirectDonation({
+    required String donationId,
+    required String causeId,
+    required double confirmedAmount,
+  }) async {
+    final batch = _db.batch();
+    batch.update(_db.collection('direct_donations').doc(donationId), {
+      'status': 'confirmed',
+      'confirmedAmount': confirmedAmount,
+      'confirmedAt': FieldValue.serverTimestamp(),
+    });
+    batch.update(_db.collection('causes').doc(causeId), {
+      'totalRaised': FieldValue.increment(confirmedAmount),
+    });
+    await batch.commit();
+  }
+
+  Stream<List<Map<String, dynamic>>> directDonationChatStream(String donationId) =>
+      _db
+          .collection('direct_donations')
+          .doc(donationId)
+          .collection('chat')
+          .orderBy('createdAt')
+          .snapshots()
+          .map((s) => s.docs.map((d) => {'id': d.id, ...d.data()}).toList());
+
+  Future<void> sendDirectDonationChatMessage({
+    required String donationId,
+    required String senderId,
+    required String senderRole,
+    required String senderName,
+    required String text,
+    String? imageUrl,
+  }) =>
+      _db
+          .collection('direct_donations')
+          .doc(donationId)
+          .collection('chat')
+          .add({
+        'senderId': senderId,
+        'senderRole': senderRole,
+        'senderName': senderName,
+        'text': text,
+        if (imageUrl != null) 'imageUrl': imageUrl,
+        'createdAt': FieldValue.serverTimestamp(),
+      });
+
   // ─── CAUSE UPDATES ────────────────────────────────────────
 
   Stream<List<CauseUpdate>> causeUpdatesStream(String causeId) => _db
@@ -394,6 +712,13 @@ class FirestoreService {
         if (imageUrl != null) 'imageUrl': imageUrl,
         'createdAt': FieldValue.serverTimestamp(),
       });
+
+  Future<void> editCauseUpdate(String causeId, String updateId, String message) =>
+      _db.collection('causes').doc(causeId).collection('updates').doc(updateId)
+          .update({'message': message});
+
+  Future<void> deleteCauseUpdate(String causeId, String updateId) =>
+      _db.collection('causes').doc(causeId).collection('updates').doc(updateId).delete();
 
   // ─── CAUSE RANKING ────────────────────────────────────────
 

@@ -1,5 +1,7 @@
 import 'package:flutter/material.dart';
 import 'package:provider/provider.dart';
+import '../../core/config/app_flavor.dart';
+import '../../core/models/app_user.dart';
 import '../../core/providers/auth_provider.dart';
 import '../../core/theme/app_theme.dart';
 import '../../widgets/common/app_button.dart';
@@ -41,7 +43,10 @@ class _LoginScreenState extends State<LoginScreen> {
   Future<void> _googleSignIn() async {
     setState(() => _googleLoading = true);
     final auth = context.read<AuthProvider>();
-    final ok   = await auth.signInWithGoogle();
+    final role = FlavorConfig.flavor == AppFlavor.cause
+        ? UserRole.cause
+        : UserRole.restaurant;
+    final ok = await auth.signInWithGoogle(role: role);
     if (!mounted) return;
     setState(() => _googleLoading = false);
     if (!ok) _showError(auth.error ?? 'Error con Google');
@@ -105,9 +110,11 @@ class _LoginScreenState extends State<LoginScreen> {
                       ),
                     ),
                     const SizedBox(height: 28),
-                    const Text(
-                      'Bienvenido\nde nuevo',
-                      style: TextStyle(
+                    Text(
+                      FlavorConfig.flavor == AppFlavor.cause
+                          ? 'Panel de\ntu causa'
+                          : 'Bienvenido\nde nuevo',
+                      style: const TextStyle(
                         color: Colors.white,
                         fontSize: 36,
                         fontWeight: FontWeight.w800,
@@ -115,9 +122,11 @@ class _LoginScreenState extends State<LoginScreen> {
                       ),
                     ),
                     const SizedBox(height: 10),
-                    const Text(
-                      'Cada pedido suma a una causa real',
-                      style: TextStyle(
+                    Text(
+                      FlavorConfig.flavor == AppFlavor.cause
+                          ? 'Gestiona tu causa y revisa tus donaciones'
+                          : 'Cada pedido suma a una causa real',
+                      style: const TextStyle(
                         color: Colors.white70,
                         fontSize: 15,
                         fontWeight: FontWeight.w400,
@@ -135,60 +144,61 @@ class _LoginScreenState extends State<LoginScreen> {
                   child: Column(
                     crossAxisAlignment: CrossAxisAlignment.start,
                     children: [
-                      // Google button
-                      GestureDetector(
-                        onTap: _googleLoading ? null : _googleSignIn,
-                        child: Container(
-                          height: 52,
-                          decoration: BoxDecoration(
-                            color: AppColors.surface,
-                            borderRadius: BorderRadius.circular(26),
-                            boxShadow: cardShadow,
-                          ),
-                          child: Center(
-                            child: _googleLoading
-                                ? const SizedBox(
-                                    width: 22, height: 22,
-                                    child: CircularProgressIndicator(
-                                      color: AppColors.primary, strokeWidth: 2.5),
-                                  )
-                                : Row(
-                                    mainAxisSize: MainAxisSize.min,
-                                    children: [
-                                      Image.network(
-                                        'https://www.google.com/favicon.ico',
-                                        width: 20, height: 20,
-                                        errorBuilder: (_, __, ___) =>
-                                            const Icon(Icons.g_mobiledata, size: 22),
-                                      ),
-                                      const SizedBox(width: 10),
-                                      const Text(
-                                        'Continuar con Google',
-                                        style: TextStyle(
-                                          fontSize: 15,
-                                          fontWeight: FontWeight.w700,
-                                          color: AppColors.textPrimary,
+                      // Google button (solo para causas)
+                      if (FlavorConfig.flavor == AppFlavor.cause) ...[
+                        GestureDetector(
+                          onTap: _googleLoading ? null : _googleSignIn,
+                          child: Container(
+                            height: 52,
+                            decoration: BoxDecoration(
+                              color: AppColors.surface,
+                              borderRadius: BorderRadius.circular(26),
+                              boxShadow: cardShadow,
+                            ),
+                            child: Center(
+                              child: _googleLoading
+                                  ? const SizedBox(
+                                      width: 22, height: 22,
+                                      child: CircularProgressIndicator(
+                                        color: AppColors.primary, strokeWidth: 2.5),
+                                    )
+                                  : Row(
+                                      mainAxisSize: MainAxisSize.min,
+                                      children: [
+                                        Image.network(
+                                          'https://www.google.com/favicon.ico',
+                                          width: 20, height: 20,
+                                          errorBuilder: (_, __, ___) =>
+                                              const Icon(Icons.g_mobiledata, size: 22),
                                         ),
-                                      ),
-                                    ],
-                                  ),
+                                        const SizedBox(width: 10),
+                                        const Text(
+                                          'Continuar con Google',
+                                          style: TextStyle(
+                                            fontSize: 15,
+                                            fontWeight: FontWeight.w700,
+                                            color: AppColors.textPrimary,
+                                          ),
+                                        ),
+                                      ],
+                                    ),
+                            ),
                           ),
                         ),
-                      ),
-
-                      const SizedBox(height: 28),
-                      Row(children: [
-                        const Expanded(child: Divider(color: AppColors.border)),
-                        Padding(
-                          padding: const EdgeInsets.symmetric(horizontal: 14),
-                          child: Text(
-                            'o ingresá con email',
-                            style: TextStyle(fontSize: 12, color: AppColors.textMuted),
+                        const SizedBox(height: 28),
+                        Row(children: [
+                          const Expanded(child: Divider(color: AppColors.border)),
+                          Padding(
+                            padding: const EdgeInsets.symmetric(horizontal: 14),
+                            child: Text(
+                              'o ingresá con email',
+                              style: TextStyle(fontSize: 12, color: AppColors.textMuted),
+                            ),
                           ),
-                        ),
-                        const Expanded(child: Divider(color: AppColors.border)),
-                      ]),
-                      const SizedBox(height: 24),
+                          const Expanded(child: Divider(color: AppColors.border)),
+                        ]),
+                        const SizedBox(height: 24),
+                      ],
 
                       AppInput(
                         label: 'Email',

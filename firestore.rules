@@ -9,6 +9,17 @@ service cloud.firestore {
     function isOwner(uid) {
       return isAuth() && request.auth.uid == uid;
     }
+    function isAdmin() {
+      return isAuth() && request.auth.token.email == 'carlos.agz94@gmail.com';
+    }
+    function isRestaurantOwner(restaurantId) {
+      return isAuth() &&
+        get(/databases/$(database)/documents/restaurants/$(restaurantId)).data.userId == request.auth.uid;
+    }
+    function isCauseOwner(causeId) {
+      return isAuth() &&
+        get(/databases/$(database)/documents/causes/$(causeId)).data.userId == request.auth.uid;
+    }
 
     // ── restaurants ───────────────────────────────────────────────────────────
     match /restaurants/{restaurantId} {
@@ -21,43 +32,102 @@ service cloud.firestore {
       // menu subcollection
       match /menu/{itemId} {
         allow read: if true;
-        allow write: if isAuth()
-                     && get(/databases/$(database)/documents/restaurants/$(restaurantId)).data.userId == request.auth.uid;
+        allow write: if isRestaurantOwner(restaurantId);
+      }
+
+      // creditTransactions: owner reads, owner creates (log-only, no edits)
+      match /creditTransactions/{txId} {
+        allow read:   if isOwner(restaurantId);
+        allow create: if isOwner(restaurantId);
+        // No updates or deletes — transaction history is immutable
       }
     }
 
     // ── causes ────────────────────────────────────────────────────────────────
     match /causes/{causeId} {
-      // Public read (public cause page)
       allow read: if true;
-      // Only the cause owner can write (except totalRaised — updated server-side)
-      allow write: if isOwner(resource.data.userId)
-                   || isOwner(causeId);
+      // Owner can do anything on their cause doc
+      allow write: if isOwner(resource.data.userId) || isOwner(causeId);
+      // Any auth user can increment helpersCount only (triggered on order creation)
+      allow update: if isAuth()
+                   && request.resource.data.diff(resource.data).affectedKeys()
+                        .hasOnly(['helpersCount']);
+
+      // Updates/noticias de la causa — solo el dueño
+      match /updates/{updateId} {
+        allow read: if true;
+        allow create: if isCauseOwner(causeId);
+        allow update: if isCauseOwner(causeId);
+        allow delete:  if isCauseOwner(causeId);
+      }
     }
 
     // ── orders ────────────────────────────────────────────────────────────────
     match /orders/{orderId} {
-      // Restaurant owner can read their orders; customer can read by email (handled app-side)
       allow read: if isAuth();
-      // Any authenticated user can create (customer placing order)
       allow create: if isAuth();
-      // Only restaurant owner can update status
-      allow update: if isAuth()
-                    && get(/databases/$(database)/documents/restaurants/$(resource.data.restaurantId)).data.userId == request.auth.uid;
+      // Restaurant owner updates order status; any auth user can only update donationStatus
+      allow update: if isRestaurantOwner(resource.data.restaurantId)
+                    || (isAuth()
+                        && request.resource.data.diff(resource.data).affectedKeys()
+                             .hasOnly(['donationStatus']));
       allow delete: if false;
+
+      // Chat restaurante ↔ cliente
+      match /chat/{msgId} {
+        allow read: if isAuth();
+        allow create: if isAuth();
+      }
     }
 
     // ── donations ─────────────────────────────────────────────────────────────
     match /donations/{donationId} {
       allow read: if isAuth();
-      // Created atomically with orders (client batch) — allow create if auth
+      // Created atomically with orders (client batch)
       allow create: if isAuth();
-      // Restaurant marks paid; cause confirms — both are authenticated
-      allow update: if isAuth();
+      // Only restaurant owner can mark as paid; only cause owner can confirm
+      allow update: if isRestaurantOwner(resource.data.restaurantId)
+                    || isCauseOwner(resource.data.causeId);
       allow delete: if false;
+
+      // Chat causa ↔ restaurante
+      match /chat/{msgId} {
+        allow read: if isAuth();
+        allow create: if isAuth();
+      }
     }
 
-    // ── users (app_users) ─────────────────────────────────────────────────────
+    // ── commissions ───────────────────────────────────────────────────────────
+    match /commissions/{restaurantId} {
+      allow read: if isOwner(restaurantId) || isAdmin();
+      match /weeks/{weekId} {
+        allow read:   if isOwner(restaurantId) || isAdmin();
+        allow create: if isOwner(restaurantId);
+        allow update: if isAdmin(); // Solo el admin puede confirmar comisiones
+      }
+    }
+
+    // ── direct_donations ──────────────────────────────────────────────────────
+    match /direct_donations/{donationId} {
+      // Customer can read their own; cause owner can read donations to their cause
+      allow read: if isAuth() && (
+        request.auth.uid == resource.data.customerId ||
+        isCauseOwner(resource.data.causeId)
+      );
+      // Any auth user can create (customer initiating a direct donation)
+      allow create: if isAuth();
+      // Only cause owner can confirm/update amount
+      allow update: if isCauseOwner(resource.data.causeId);
+      allow delete: if false;
+
+      // Chat: customer ↔ cause
+      match /chat/{msgId} {
+        allow read: if isAuth();
+        allow create: if isAuth();
+      }
+    }
+
+    // ── users ─────────────────────────────────────────────────────────────────
     match /users/{userId} {
       allow read:  if isOwner(userId);
       allow write: if isOwner(userId);

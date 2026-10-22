@@ -1,0 +1,208 @@
+{
+  "common": {
+    "appName": "Unitia",
+    "loading": "Cargando...",
+    "save": "Guardar",
+    "saving": "Guardando...",
+    "cancel": "Cancelar",
+    "confirm": "Confirmar",
+    "back": "Volver",
+    "search": "Buscar",
+    "searchPlaceholder": "Buscar causa por nombre...",
+    "selectCause": "Elegir causa",
+    "changeCause": "Cambiar causa",
+    "noCauses": "No hay causas disponibles.",
+    "error": "Error",
+    "success": "¡Listo!",
+    "close": "Cerrar",
+    "seeAll": "Ver todas",
+    "seeMore": "Ver más",
+    "logout": "Salir"
+  },
+  "nav": {
+    "home": "Inicio",
+    "causes": "Causas",
+    "order": "Pedir",
+    "impact": "Impacto",
+    "account": "Cuenta",
+    "orders": "Pedidos",
+    "donations": "Donaciones",
+    "menu": "Menú",
+    "settings": "Config",
+    "updates": "Noticias",
+    "profile": "Perfil"
+  },
+  "auth": {
+    "signIn": "Iniciar sesión",
+    "signUp": "Crear cuenta",
+    "email": "Email",
+    "password": "Contraseña",
+    "name": "Nombre completo",
+    "signingIn": "Ingresando...",
+    "creatingAccount": "Creando cuenta...",
+    "alreadyHaveAccount": "¿Ya tienes cuenta?",
+    "noAccount": "¿No tienes cuenta?",
+    "registerFree": "Regístrate gratis",
+    "loginLink": "Iniciar sesión",
+    "welcomeBack": "Bienvenido de vuelta",
+    "joinUs": "Únete y haz el bien comiendo",
+    "createFreeAccount": "Crear cuenta gratis",
+    "asCustomer": "Como cliente de restaurantes Unitia",
+    "chooseAccountType": "Elige tu tipo de cuenta para continuar",
+    "minPassword": "Mínimo 8 caracteres",
+    "roles": {
+      "customer": "Cliente",
+      "restaurant": "Restaurante",
+      "cause": "Causa"
+    },
+    "tagline": "Cada pedido suma a una causa real"
+  },
+  "landing": {
+    "hero": {
+      "badge": "Plataforma activa",
+      "title": "Cada pedido",
+      "titleAccent": "suma",
+      "titleEnd": "a una causa real",
+      "subtitle": "Unitia conecta restaurantes con organizaciones sociales. Cada orden genera una donación automática a la causa que elegís apoyar.",
+      "ctaRestaurant": "Soy restaurante",
+      "ctaCause": "Tengo una causa"
+    },
+    "howItWorks": {
+      "title": "¿Cómo funciona?",
+      "subtitle": "Simple, transparente y sin costos de entrada.",
+      "steps": [
+        { "step": "01", "title": "El restaurante elige una causa", "desc": "Se registra, configura su menú y selecciona qué porcentaje de cada pedido va a una causa social." },
+        { "step": "02", "title": "Los clientes piden normalmente", "desc": "Escanean un QR o entran al link del restaurante. El pedido genera una donación automática, sin fricción." },
+        { "step": "03", "title": "La causa recibe el apoyo", "desc": "El restaurante ve cuánto debe, lo transfiere, y la causa confirma. Todo trazable y transparente." }
+      ]
+    },
+    "activeCauses": "Causas activas",
+    "activeCausesSubtitle": "Organizaciones que ya están recibiendo el apoyo de restaurantes.",
+    "cta": {
+      "title": "¿Listo para sumarte?",
+      "subtitle": "Une tu restaurante a la red en 5 minutos. Sin costos de entrada. La solidaridad como hábito.",
+      "btn": "Registrar mi restaurante →"
+    },
+    "footer": "Conectando restaurantes con causas que importan."
+  },
+  "cause": {
+    "selector": {
+      "title": "Elige una causa",
+      "subtitle": "Tu apoyo llega a través de cada pedido",
+      "searchPlaceholder": "Buscar por nombre...",
+      "noResults": "No encontramos causas con ese nombre.",
+      "supporting": "apoyando",
+      "raised": "recaudado",
+      "restaurants": "restaurante|restaurantes",
+      "selectBtn": "Apoyar esta causa",
+      "changeBtn": "Cambiar causa"
+    },
+    "today": "Causa de hoy",
+    "change": "Cambiar →",
+    "selected": "Seleccionada ❤️",
+    "choose": "Elige una causa para apoyar hoy",
+    "chooseSubtitle": "Se renueva cada día",
+    "active": "Causas activas",
+    "all": "Ver todas"
+  },
+  "restaurant": {
+    "order": "Pedir",
+    "donationPercent": "% de tu pedido va a una causa",
+    "chooseCause": "¿A qué causa quieres apoyar?",
+    "chooseCauseSubtitle": "El {{percent}}% de tu pedido irá a la causa que elijas.",
+    "supporting": "APOYANDO A",
+    "changeCause": "Cambiar causa",
+    "noRestaurants": "No hay restaurantes disponibles aún.",
+    "donatesTo": "% a causas"
+  },
+  "order": {
+    "title": "Tu pedido",
+    "yourData": "Tus datos",
+    "name": "Nombre",
+    "emailImpact": "Email (para ver tu impacto)",
+    "phone": "Teléfono",
+    "address": "Dirección de entrega",
+    "addressPlaceholder": "Calle, número, colonia",
+    "notes": "Notas para el pedido",
+    "subtotal": "Subtotal",
+    "delivery": "Envío a domicilio",
+    "deliveryFree": "Gratis",
+    "deliveryCalculating": "Calculando...",
+    "donation": "❤️ Donación a {{cause}}",
+    "total": "Total",
+    "confirm": "Confirmar pedido",
+    "viewOrder": "Ver pedido",
+    "backToMenu": "← Volver al menú",
+    "sendOrder": "Confirmar pedido · {{total}}",
+    "sending": "Enviando...",
+    "linkedToAccount": "Pedido vinculado a tu cuenta Unitia",
+    "noCategory": "Sin categoría",
+    "cartEmpty": "Tu carrito está vacío",
+    "payment": {
+      "title": "Pago",
+      "method": "Método de pago",
+      "cash": "Efectivo",
+      "transfer": "Transferencia bancaria",
+      "transferProof": "Comprobante de transferencia",
+      "uploadProof": "Subir imagen del comprobante",
+      "proofUploaded": "Comprobante adjunto ✓",
+      "cashNote": "Paga al recibir tu pedido",
+      "transferNote": "Realiza la transferencia y adjunta el comprobante"
+    }
+  },
+  "impact": {
+    "title": "Mi Impacto",
+    "totalSpent": "Total gastado",
+    "totalDonated": "Total donado",
+    "causesSupported": "Causas apoyadas",
+    "ordersMade": "Pedidos realizados",
+    "byСause": "Tu donación por causa",
+    "recentHistory": "Historial reciente",
+    "noOrders": "Aún no tienes pedidos.",
+    "noOrdersSubtitle": "Cuando hagas un pedido en un restaurante Unitia, aparecerá aquí.",
+    "exploreRestaurants": "Explorar restaurantes",
+    "emailSearch": "Ingresa el email que usaste al hacer tus pedidos y te mostramos cuánto has contribuido.",
+    "searchBtn": "Buscar",
+    "noOrdersEmail": "No encontramos pedidos con ese email.",
+    "createAccount": "Crea una cuenta",
+    "createAccountSuffix": "para ver tu impacto automáticamente.",
+    "thanks": "Gracias por elegir restaurantes que hacen el bien. ❤️"
+  },
+  "dashboard": {
+    "restaurant": {
+      "todayOrders": "Pedidos hoy",
+      "todayRevenue": "Ventas hoy",
+      "todayDonations": "Donaciones hoy",
+      "pendingDonations": "Donaciones pendientes",
+      "recentOrders": "Pedidos recientes",
+      "seeAll": "Ver todos",
+      "noCause": "+ Elegir una causa para apoyar",
+      "shareLink": "TU LINK DE PEDIDOS",
+      "view": "Ver"
+    },
+    "cause": {
+      "totalRaised": "Total recaudado",
+      "pendingCollection": "Pendiente de cobro",
+      "toReceive": "Por recibir",
+      "restaurants": "Restaurantes",
+      "toConfirm": "Para confirmar",
+      "recentActivity": "Actividad reciente",
+      "viewPage": "Ver página"
+    }
+  },
+  "donations": {
+    "markPaid": "Ya pagué",
+    "confirmReceived": "Confirmar recibido",
+    "paymentMethod": "Método",
+    "cash": "Efectivo",
+    "transfer": "Transferencia",
+    "proof": "Comprobante",
+    "viewProof": "Ver comprobante",
+    "pending": "Pendiente",
+    "paid": "Pagado",
+    "confirmed": "Confirmado",
+    "disputed": "Disputado",
+    "enterAmount": "Ingresa el monto transferido",
+    "attachProof": "Adjunta el comprobante"
+  }
+}

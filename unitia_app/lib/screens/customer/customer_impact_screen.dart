@@ -1,5 +1,6 @@
 import 'package:flutter/material.dart';
 import 'package:provider/provider.dart';
+import '../../core/l10n/app_localizations.dart';
 import '../../core/providers/auth_provider.dart';
 import '../../core/services/firestore_service.dart';
 import '../../core/theme/app_theme.dart';
@@ -26,9 +27,13 @@ class _CustomerImpactScreenState extends State<CustomerImpactScreen> {
   }
 
   Future<void> _load() async {
-    final email = context.read<AuthProvider>().user?.email ?? '';
-    final impact = await _fs.getCustomerImpact(email);
-    if (mounted) setState(() { _data = impact; _loading = false; });
+    try {
+      final email = context.read<AuthProvider>().user?.email ?? '';
+      final impact = await _fs.getCustomerImpact(email);
+      if (mounted) setState(() { _data = impact; _loading = false; });
+    } catch (e) {
+      if (mounted) setState(() { _loading = false; });
+    }
   }
 
   String _fmt(double v) {
@@ -39,6 +44,7 @@ class _CustomerImpactScreenState extends State<CustomerImpactScreen> {
 
   @override
   Widget build(BuildContext context) {
+    final l10n = AppLocalizations.of(context);
     return Scaffold(
       backgroundColor: AppColors.background,
       body: SafeArea(
@@ -51,8 +57,8 @@ class _CustomerImpactScreenState extends State<CustomerImpactScreen> {
                 child: Row(
                   mainAxisAlignment: MainAxisAlignment.spaceBetween,
                   children: [
-                    const Text('My Impact',
-                        style: TextStyle(fontSize: 22, fontWeight: FontWeight.w800)),
+                    Text(l10n.impactTitle,
+                        style: const TextStyle(fontSize: 22, fontWeight: FontWeight.w800)),
                     GestureDetector(
                       onTap: () => Navigator.push(context,
                           MaterialPageRoute(
@@ -64,13 +70,13 @@ class _CustomerImpactScreenState extends State<CustomerImpactScreen> {
                           color: AppColors.primaryBg,
                           borderRadius: BorderRadius.circular(12),
                         ),
-                        child: const Row(
+                        child: Row(
                           children: [
-                            Icon(Icons.leaderboard_rounded,
+                            const Icon(Icons.leaderboard_rounded,
                                 size: 16, color: AppColors.primary),
-                            SizedBox(width: 6),
-                            Text('Ranking',
-                                style: TextStyle(
+                            const SizedBox(width: 6),
+                            Text(l10n.impactRanking,
+                                style: const TextStyle(
                                   fontSize: 13,
                                   fontWeight: FontWeight.w700,
                                   color: AppColors.primary,
@@ -121,9 +127,9 @@ class _CustomerImpactScreenState extends State<CustomerImpactScreen> {
                                       color: Colors.white, size: 26),
                                 ),
                                 const SizedBox(height: 12),
-                                const Text(
-                                  'TOTAL IMPACT GENERATED',
-                                  style: TextStyle(
+                                Text(
+                                  l10n.impactTotalLabel,
+                                  style: const TextStyle(
                                     color: Colors.white70,
                                     fontSize: 11,
                                     fontWeight: FontWeight.w700,
@@ -147,14 +153,14 @@ class _CustomerImpactScreenState extends State<CustomerImpactScreen> {
                                     style: const TextStyle(
                                         color: Colors.white70, fontSize: 14, height: 1.4),
                                     children: [
-                                      const TextSpan(text: 'Your orders have directly supported '),
+                                      TextSpan(text: '${l10n.impactOrdersPrefix} '),
                                       TextSpan(
-                                        text:
-                                            '${(_data?['byCause'] as List?)?.length ?? 0} local causes',
+                                        text: l10n.impactLocalCauses(
+                                            (_data?['byCause'] as List?)?.length ?? 0),
                                         style: const TextStyle(
                                             fontWeight: FontWeight.w800, color: Colors.white),
                                       ),
-                                      const TextSpan(text: ' in your community.'),
+                                      TextSpan(text: ' ${l10n.impactInCommunity}'),
                                     ],
                                   ),
                                 ),
@@ -170,14 +176,14 @@ class _CustomerImpactScreenState extends State<CustomerImpactScreen> {
                                       color: Colors.white,
                                       borderRadius: BorderRadius.circular(14),
                                     ),
-                                    child: const Row(
+                                    child: Row(
                                       mainAxisAlignment: MainAxisAlignment.center,
                                       children: [
-                                        Icon(Icons.volunteer_activism_rounded,
+                                        const Icon(Icons.volunteer_activism_rounded,
                                             color: AppColors.primary, size: 18),
-                                        SizedBox(width: 8),
+                                        const SizedBox(width: 8),
                                         Text(
-                                          'Refer a Cause',
+                                          l10n.impactReferCause,
                                           style: TextStyle(
                                             color: AppColors.primary,
                                             fontWeight: FontWeight.w700,
@@ -206,19 +212,7 @@ class _CustomerImpactScreenState extends State<CustomerImpactScreen> {
                                       const Icon(Icons.local_cafe_outlined,
                                           color: AppColors.primary, size: 20),
                                       const SizedBox(width: 8),
-                                      Container(
-                                        padding: const EdgeInsets.symmetric(
-                                            horizontal: 8, vertical: 3),
-                                        decoration: BoxDecoration(
-                                          color: AppColors.success.withOpacity(0.12),
-                                          borderRadius: BorderRadius.circular(20),
-                                        ),
-                                        child: const Text('+2 this week',
-                                            style: TextStyle(
-                                                fontSize: 10,
-                                                fontWeight: FontWeight.w700,
-                                                color: AppColors.success)),
-                                      ),
+                                      // weekly delta placeholder — remove hardcoded badge
                                     ]),
                                     const SizedBox(height: 10),
                                     Text(
@@ -229,8 +223,8 @@ class _CustomerImpactScreenState extends State<CustomerImpactScreen> {
                                         color: AppColors.textPrimary,
                                       ),
                                     ),
-                                    const Text('Contributions made',
-                                        style: TextStyle(
+                                    Text(l10n.impactContributions,
+                                        style: const TextStyle(
                                             fontSize: 12, color: AppColors.textSecondary)),
                                   ],
                                 ),
@@ -254,8 +248,8 @@ class _CustomerImpactScreenState extends State<CustomerImpactScreen> {
                                         color: AppColors.textPrimary,
                                       ),
                                     ),
-                                    const Text('Causes supported',
-                                        style: TextStyle(
+                                    Text(l10n.impactCausesSupported,
+                                        style: const TextStyle(
                                             fontSize: 12, color: AppColors.textSecondary)),
                                   ],
                                 ),
@@ -269,12 +263,12 @@ class _CustomerImpactScreenState extends State<CustomerImpactScreen> {
                           Row(
                             mainAxisAlignment: MainAxisAlignment.spaceBetween,
                             children: [
-                              const Text('Impact History',
-                                  style: TextStyle(
+                              Text(l10n.impactHistory,
+                                  style: const TextStyle(
                                       fontSize: 17, fontWeight: FontWeight.w800)),
                               GestureDetector(
                                 onTap: () {},
-                                child: const Text('See All',
+                                child: Text(l10n.impactSeeAll,
                                     style: TextStyle(
                                       fontSize: 13,
                                       fontWeight: FontWeight.w600,
@@ -299,8 +293,8 @@ class _CustomerImpactScreenState extends State<CustomerImpactScreen> {
                                     Icon(Icons.receipt_long_outlined,
                                         size: 40, color: AppColors.border),
                                     const SizedBox(height: 10),
-                                    const Text('No orders yet',
-                                        style: TextStyle(
+                                    Text(l10n.impactNoOrders,
+                                        style: const TextStyle(
                                             color: AppColors.textSecondary, fontSize: 14)),
                                   ]),
                                 ),
@@ -377,7 +371,9 @@ class _TransactionTile extends StatelessWidget {
                 ),
                 const SizedBox(height: 2),
                 Text(
-                  isConfirmed ? 'Completed' : 'Pending',
+                  isConfirmed
+                      ? AppLocalizations.of(context).impactCompleted
+                      : AppLocalizations.of(context).impactPending,
                   style: TextStyle(
                     fontSize: 11,
                     fontWeight: FontWeight.w600,

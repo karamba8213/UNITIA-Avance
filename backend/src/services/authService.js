@@ -46,7 +46,7 @@ async function register({ email, password, name, role, profile }) {
           description: profile.description,
           address: profile.address,
           phone: profile.phone,
-          donationPercentage: profile.donationPercentage ?? 5.0,
+          donationPercentage: profile.donationPercentage ?? 15.0,
         },
       })
     } else if (role === 'CAUSE') {
@@ -59,6 +59,13 @@ async function register({ email, password, name, role, profile }) {
           description: profile.description || '',
           story: profile.story || '',
           targetAmount: profile.targetAmount ?? 0,
+        },
+      })
+    } else if (role === 'CUSTOMER') {
+      await tx.customer.create({
+        data: {
+          userId: newUser.id,
+          phone: profile.phone,
         },
       })
     }
@@ -93,8 +100,8 @@ async function oauthLogin({ provider, providerAccountId, email, name, image, rol
   let user = await prisma.user.findUnique({ where: { email } })
 
   if (!user) {
-    // New OAuth user — default role is RESTAURANT, can be changed after onboarding
-    const assignedRole = role || 'RESTAURANT'
+    // New OAuth user — default role is CUSTOMER
+    const assignedRole = role || 'CUSTOMER'
     const profileName = name || email.split('@')[0]
 
     user = await prisma.$transaction(async (tx) => {
@@ -117,7 +124,7 @@ async function oauthLogin({ provider, providerAccountId, email, name, image, rol
             userId: newUser.id,
             name: profileName,
             slug,
-            donationPercentage: 5.0,
+            donationPercentage: 15.0,
           },
         })
       } else if (assignedRole === 'CAUSE') {
@@ -129,6 +136,12 @@ async function oauthLogin({ provider, providerAccountId, email, name, image, rol
             slug,
             description: '',
             story: '',
+          },
+        })
+      } else if (assignedRole === 'CUSTOMER') {
+        await tx.customer.create({
+          data: {
+            userId: newUser.id,
           },
         })
       }

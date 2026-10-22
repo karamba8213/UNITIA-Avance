@@ -15,5 +15,17 @@ service cloud.firestore {
     match /{document=**} {
       allow read, write: if request.time < timestamp.date(2026, 4, 5);
     }
+
+    // ── Restaurants ────────────────────────────────────────────────────────
+    match /restaurants/{restaurantId} {
+      function isOwner(restaurantId) {
+        return request.auth != null && request.auth.uid == restaurantId;
+      }
+
+      match /creditTransactions/{txId} {
+        allow read: if isOwner(restaurantId);
+        allow create: if isOwner(restaurantId);
+      }
+    }
   }
 }

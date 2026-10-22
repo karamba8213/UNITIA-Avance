@@ -26,8 +26,7 @@ const updateSchema = z.object({
   address: z.string().optional(),
   phone: z.string().optional(),
   logo: z.string().url().optional(),
-  donationPercentage: z.number().min(0).max(100).optional(),
-  causeId: z.string().optional().nullable(),
+  donationPercentage: z.number().min(15).max(100).optional(),
 })
 
 router.patch('/me', authenticate, requireRole('RESTAURANT'), async (req, res, next) => {

@@ -11,12 +11,20 @@ enum Role {
   RESTAURANT
   CAUSE
   ADMIN
+  CUSTOMER
 }
 
 enum OrderStatus {
   PENDING
   CONFIRMED
+  READY
+  COMPLETED
   CANCELLED
+}
+
+enum OrderType {
+  DELIVERY
+  PICKUP
 }
 
 enum DonationStatus {
@@ -45,6 +53,7 @@ model User {
   updatedAt         DateTime   @updatedAt
   restaurant        Restaurant?
   cause             Cause?
+  customer          Customer?
 
   @@index([email])
   @@index([provider, providerAccountId])
@@ -60,7 +69,10 @@ model Restaurant {
   logo               String?
   address            String?
   phone              String?
-  donationPercentage Float      @default(5.0)
+  latitude           Float?
+  longitude          Float?
+  deliveryTiers      Json?      // [{maxKm: 3, price: 30}, {maxKm: 6, price: 50}]
+  donationPercentage Float      @default(15.0)
   causeId            String?
   cause              Cause?     @relation(fields: [causeId], references: [id])
   isVerified         Boolean    @default(false)
@@ -87,6 +99,11 @@ model Cause {
   logo         String?
   images       String[]
   targetAmount Float        @default(0)
+  // Bank account for receiving donations
+  bankName     String?      // e.g. "BBVA"
+  bankHolder   String?      // account holder name
+  bankClabe    String?      // CLABE interbancaria (18 digits)
+  bankAccount  String?      // account number (optional alternative)
   isVerified   Boolean      @default(false)
   isActive     Boolean      @default(true)
   createdAt    DateTime     @default(now())
@@ -122,10 +139,16 @@ model Order {
   restaurant     Restaurant  @relation(fields: [restaurantId], references: [id])
   causeId        String
   cause          Cause       @relation(fields: [causeId], references: [id])
+  customerId     String?
+  customer       Customer?   @relation(fields: [customerId], references: [id])
   customerName   String
   customerEmail  String?
   customerPhone  String?
+  orderType        OrderType   @default(DELIVERY)
+  estimatedMinutes Int?        // set when restaurant confirms
   notes          String?
+  deliveryAddress String?
+  deliveryFee    Float       @default(0)
   subtotal       Float
   donationAmount Float
   status         OrderStatus @default(PENDING)
@@ -133,10 +156,24 @@ model Order {
   updatedAt      DateTime    @updatedAt
   items          OrderItem[]
   donation       Donation?
+  messages       Message[]
 
   @@index([restaurantId, createdAt])
   @@index([causeId])
   @@index([customerEmail])
+  @@index([customerId])
+}
+
+model Message {
+  id         String   @id @default(cuid())
+  orderId    String
+  order      Order    @relation(fields: [orderId], references: [id])
+  senderRole String   // 'RESTAURANT' | 'CUSTOMER'
+  senderName String
+  text       String   @db.Text
+  createdAt  DateTime @default(now())
+
+  @@index([orderId, createdAt])
 }
 
 model OrderItem {
@@ -161,10 +198,12 @@ model Donation {
   orderId      String            @unique
   order        Order             @relation(fields: [orderId], references: [id])
   amount       Float
-  status       DonationStatus    @default(PENDING)
-  paidAt       DateTime?
-  confirmedAt  DateTime?
-  notes        String?
+  status         DonationStatus    @default(PENDING)
+  paymentMethod  String?           // 'CASH' | 'TRANSFER'
+  proofUrl       String?
+  paidAt         DateTime?
+  confirmedAt    DateTime?
+  notes          String?
   createdAt    DateTime          @default(now())
   updatedAt    DateTime          @updatedAt
   payments     DonationPayment[]
@@ -199,4 +238,19 @@ model DonationPayment {
   payment    Payment  @relation(fields: [paymentId], references: [id])
 
   @@id([donationId, paymentId])
+}
+
+model Customer {
+  id               String    @id @default(cuid())
+  userId           String    @unique
+  user             User      @relation(fields: [userId], references: [id])
+  phone            String?
+  savedAddresses   Json      @default("[]") // [{ label, address }]
+  selectedCauseId  String?
+  selectedCauseAt  DateTime?
+  createdAt        DateTime  @default(now())
+  updatedAt        DateTime  @updatedAt
+  orders           Order[]
+
+  @@index([userId])
 }

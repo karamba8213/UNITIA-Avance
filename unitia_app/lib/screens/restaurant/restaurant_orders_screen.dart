@@ -1,9 +1,15 @@
+import 'dart:async';
 import 'package:flutter/material.dart';
+import 'package:provider/provider.dart';
 import 'package:url_launcher/url_launcher.dart';
 import '../../core/models/order.dart';
+import '../../core/models/restaurant.dart';
+import '../../core/providers/auth_provider.dart';
 import '../../core/services/firestore_service.dart';
 import '../../core/services/notification_service.dart';
 import '../../core/theme/app_theme.dart';
+import '../shared/order_chat_screen.dart';
+import 'restaurant_credits_screen.dart';
 
 class RestaurantOrdersScreen extends StatefulWidget {
   final String uid;
@@ -16,6 +22,29 @@ class RestaurantOrdersScreen extends StatefulWidget {
 class _RestaurantOrdersScreenState extends State<RestaurantOrdersScreen> {
   int _tab = 0;
   final Set<String> _knownOrderIds = {};
+  List<Order> _latestOrders = [];
+  Timer? _urgentTimer;
+
+  @override
+  void initState() {
+    super.initState();
+    _urgentTimer = Timer.periodic(const Duration(seconds: 10), (_) {
+      final now = DateTime.now();
+      for (final order in _latestOrders) {
+        if (order.status != OrderStatus.pending) continue;
+        final waited = now.difference(order.createdAt);
+        if (waited.inSeconds >= 60) {
+          NotificationService.showUrgentOrder(order, waited.inMinutes);
+        }
+      }
+    });
+  }
+
+  @override
+  void dispose() {
+    _urgentTimer?.cancel();
+    super.dispose();
+  }
 
   @override
   Widget build(BuildContext context) {
@@ -27,38 +56,104 @@ class _RestaurantOrdersScreenState extends State<RestaurantOrdersScreen> {
         child: Column(
           children: [
             // ── Header ──────────────────────────────────────
-            Padding(
-              padding: const EdgeInsets.fromLTRB(20, 20, 20, 0),
-              child: Row(
-                mainAxisAlignment: MainAxisAlignment.spaceBetween,
-                children: [
-                  const Text('Pedidos',
-                      style: TextStyle(
-                          fontSize: 22, fontWeight: FontWeight.w800)),
-                  // Live indicator
-                  Container(
-                    padding: const EdgeInsets.symmetric(
-                        horizontal: 10, vertical: 5),
-                    decoration: BoxDecoration(
-                      color: AppColors.success.withValues(alpha: 0.1),
-                      borderRadius: BorderRadius.circular(20),
-                    ),
-                    child: const Row(
-                      mainAxisSize: MainAxisSize.min,
-                      children: [
-                        _PulseDot(),
-                        SizedBox(width: 5),
-                        Text('En vivo',
-                            style: TextStyle(
-                              fontSize: 12,
-                              fontWeight: FontWeight.w700,
-                              color: AppColors.success,
-                            )),
-                      ],
-                    ),
+            StreamBuilder<Restaurant?>(
+              stream: fs.restaurantStream(widget.uid),
+              builder: (ctx, snap) {
+                final restaurant = snap.data;
+                final isActive = restaurant?.isActive ?? true;
+                return Container(
+                  color: AppColors.surface,
+                  padding: const EdgeInsets.fromLTRB(20, 16, 20, 12),
+                  child: Column(
+                    children: [
+                      Row(
+                        mainAxisAlignment: MainAxisAlignment.spaceBetween,
+                        children: [
+                          const Text('Pedidos',
+                              style: TextStyle(
+                                  fontSize: 22, fontWeight: FontWeight.w800)),
+                          // Live indicator
+                          Container(
+                            padding: const EdgeInsets.symmetric(
+                                horizontal: 10, vertical: 5),
+                            decoration: BoxDecoration(
+                              color: AppColors.success.withValues(alpha: 0.1),
+                              borderRadius: BorderRadius.circular(20),
+                            ),
+                            child: const Row(
+                              mainAxisSize: MainAxisSize.min,
+                              children: [
+                                _PulseDot(),
+                                SizedBox(width: 5),
+                                Text('En vivo',
+                                    style: TextStyle(
+                                      fontSize: 12,
+                                      fontWeight: FontWeight.w700,
+                                      color: AppColors.success,
+                                    )),
+                              ],
+                            ),
+                          ),
+                        ],
+                      ),
+                      const SizedBox(height: 12),
+                      // ── Toggle activo / inactivo ──────────
+                      GestureDetector(
+                        onTap: restaurant == null ? null : () {
+                          fs.setRestaurantActive(widget.uid, !isActive);
+                        },
+                        child: AnimatedContainer(
+                          duration: const Duration(milliseconds: 200),
+                          width: double.infinity,
+                          padding: const EdgeInsets.symmetric(vertical: 12, horizontal: 16),
+                          decoration: BoxDecoration(
+                            color: isActive
+                                ? AppColors.success.withValues(alpha: 0.1)
+                                : AppColors.error.withValues(alpha: 0.08),
+                            borderRadius: BorderRadius.circular(14),
+                            border: Border.all(
+                              color: isActive ? AppColors.success : AppColors.error,
+                              width: 1.5,
+                            ),
+                          ),
+                          child: Row(
+                            children: [
+                              Container(
+                                width: 10, height: 10,
+                                decoration: BoxDecoration(
+                                  color: isActive ? AppColors.success : AppColors.error,
+                                  shape: BoxShape.circle,
+                                ),
+                              ),
+                              const SizedBox(width: 10),
+                              Expanded(
+                                child: Text(
+                                  isActive
+                                      ? 'Abierto — aceptando pedidos'
+                                      : 'Cerrado — no acepta pedidos',
+                                  style: TextStyle(
+                                    fontSize: 13,
+                                    fontWeight: FontWeight.w700,
+                                    color: isActive ? AppColors.success : AppColors.error,
+                                  ),
+                                ),
+                              ),
+                              Text(
+                                'Cambiar',
+                                style: TextStyle(
+                                  fontSize: 12,
+                                  color: isActive ? AppColors.success : AppColors.error,
+                                  fontWeight: FontWeight.w600,
+                                ),
+                              ),
+                            ],
+                          ),
+                        ),
+                      ),
+                    ],
                   ),
-                ],
-              ),
+                );
+              },
             ),
 
             const SizedBox(height: 16),
@@ -92,80 +187,109 @@ class _RestaurantOrdersScreenState extends State<RestaurantOrdersScreen> {
 
             // ── Orders list ──────────────────────────────────
             Expanded(
-              child: StreamBuilder<List<Order>>(
-                stream: fs.restaurantOrdersStream(widget.uid),
-                builder: (ctx, snap) {
-                  if (snap.connectionState == ConnectionState.waiting) {
-                    return const Center(
-                        child: CircularProgressIndicator(
-                            color: AppColors.primary));
-                  }
-
-                  final all = snap.data ?? [];
-
-                  // Detectar pedidos nuevos y disparar notificación local
-                  for (final order in all) {
-                    if (order.status == OrderStatus.pending &&
-                        !_knownOrderIds.contains(order.id)) {
-                      if (_knownOrderIds.isNotEmpty) {
-                        // Solo notificar después de la carga inicial
-                        NotificationService.showNewOrder(order);
+              child: StreamBuilder<Restaurant?>(
+                stream: fs.restaurantStream(widget.uid),
+                builder: (ctx, restaurantSnap) {
+                  final restaurant = restaurantSnap.data;
+                  return StreamBuilder<List<Order>>(
+                    stream: fs.restaurantOrdersStream(widget.uid),
+                    builder: (ctx, snap) {
+                      if (snap.connectionState == ConnectionState.waiting) {
+                        return const Center(
+                            child: CircularProgressIndicator(
+                                color: AppColors.primary));
                       }
-                      _knownOrderIds.add(order.id);
-                    }
-                  }
 
-                  // Split: activos = pending + confirmed + ready
-                  //        historial = cancelled + rest
-                  final activos = all
-                      .where((o) =>
-                          o.status == OrderStatus.pending ||
-                          o.status == OrderStatus.confirmed ||
-                          o.status == OrderStatus.ready)
-                      .toList()
-                    ..sort((a, b) {
-                      // pending primero, luego confirmed, luego ready
-                      const rank = {
-                        OrderStatus.pending:   0,
-                        OrderStatus.confirmed: 1,
-                        OrderStatus.ready:     2,
-                        OrderStatus.cancelled: 3,
-                      };
-                      return rank[a.status]!.compareTo(rank[b.status]!);
-                    });
+                      final all = snap.data ?? [];
+                      _latestOrders = all;
 
-                  final historial = all
-                      .where((o) => o.status == OrderStatus.cancelled)
-                      .toList();
+                      // Detectar pedidos nuevos y disparar notificación local
+                      for (final order in all) {
+                        if (order.status == OrderStatus.pending &&
+                            !_knownOrderIds.contains(order.id)) {
+                          if (_knownOrderIds.isNotEmpty) {
+                            NotificationService.showNewOrder(order);
+                          }
+                          _knownOrderIds.add(order.id);
+                        }
+                      }
 
-                  final orders = _tab == 0 ? activos : historial;
+                      // Split: activos = pending + confirmed + ready
+                      final activos = all
+                          .where((o) =>
+                              o.status == OrderStatus.pending ||
+                              o.status == OrderStatus.confirmed ||
+                              o.status == OrderStatus.ready)
+                          .toList()
+                        ..sort((a, b) {
+                          const rank = {
+                            OrderStatus.pending:   0,
+                            OrderStatus.confirmed: 1,
+                            OrderStatus.ready:     2,
+                            OrderStatus.cancelled: 3,
+                          };
+                          final r = rank[a.status]!.compareTo(rank[b.status]!);
+                          if (r != 0) return r;
+                          // Dentro de pending: más viejos primero (más urgentes)
+                          if (a.status == OrderStatus.pending) {
+                            return a.createdAt.compareTo(b.createdAt);
+                          }
+                          return b.createdAt.compareTo(a.createdAt);
+                        });
 
-                  if (orders.isEmpty) {
-                    return Center(
-                      child: Column(
-                        mainAxisSize: MainAxisSize.min,
-                        children: [
-                          const Text('📦',
-                              style: TextStyle(fontSize: 48)),
-                          const SizedBox(height: 12),
-                          Text(
-                            _tab == 0
-                                ? 'Sin pedidos activos'
-                                : 'Sin historial aún',
-                            style: const TextStyle(
-                                color: AppColors.textMuted,
-                                fontSize: 15),
+                      final historial = all
+                          .where((o) => o.status == OrderStatus.cancelled)
+                          .toList();
+
+                      final orders = _tab == 0 ? activos : historial;
+
+                      if (orders.isEmpty) {
+                        return Center(
+                          child: Column(
+                            mainAxisSize: MainAxisSize.min,
+                            children: [
+                              const Text('📦',
+                                  style: TextStyle(fontSize: 48)),
+                              const SizedBox(height: 12),
+                              Text(
+                                _tab == 0
+                                    ? 'Sin pedidos activos'
+                                    : 'Sin historial aún',
+                                style: const TextStyle(
+                                    color: AppColors.textMuted,
+                                    fontSize: 15),
+                              ),
+                            ],
                           ),
-                        ],
-                      ),
-                    );
-                  }
+                        );
+                      }
 
-                  return ListView.builder(
-                    padding: const EdgeInsets.fromLTRB(20, 0, 20, 20),
-                    itemCount: orders.length,
-                    itemBuilder: (_, i) =>
-                        _OrderCard(order: orders[i]),
+                      // Contar pedidos por cliente
+                      final customerCounts = <String, int>{};
+                      for (final o in all) {
+                        final key = o.customerEmail?.isNotEmpty == true
+                            ? o.customerEmail!
+                            : o.customerName;
+                        customerCounts[key] = (customerCounts[key] ?? 0) + 1;
+                      }
+
+                      return ListView.builder(
+                        padding: const EdgeInsets.fromLTRB(20, 0, 20, 20),
+                        itemCount: orders.length,
+                        itemBuilder: (_, i) {
+                          final o = orders[i];
+                          final key = o.customerEmail?.isNotEmpty == true
+                              ? o.customerEmail!
+                              : o.customerName;
+                          return _OrderCard(
+                            order: o,
+                            restaurant: restaurant,
+                            restaurantUid: widget.uid,
+                            customerOrderCount: customerCounts[key] ?? 1,
+                          );
+                        },
+                      );
+                    },
                   );
                 },
               ),
@@ -220,7 +344,15 @@ class _TabBtn extends StatelessWidget {
 // ── Order card ─────────────────────────────────────────────────────────────────
 class _OrderCard extends StatefulWidget {
   final Order order;
-  const _OrderCard({required this.order});
+  final Restaurant? restaurant;
+  final String restaurantUid;
+  final int customerOrderCount;
+  const _OrderCard({
+    required this.order,
+    required this.restaurant,
+    required this.restaurantUid,
+    required this.customerOrderCount,
+  });
 
   @override
   State<_OrderCard> createState() => _OrderCardState();
@@ -229,16 +361,62 @@ class _OrderCard extends StatefulWidget {
 class _OrderCardState extends State<_OrderCard> {
   final _fs    = FirestoreService();
   bool _acting = false;
+  Timer? _ticker;
 
   // Auto-expand pending orders
   bool get _expanded =>
       widget.order.status == OrderStatus.pending || _manualExpand;
   bool _manualExpand = false;
 
+  @override
+  void initState() {
+    super.initState();
+    if (widget.order.status == OrderStatus.pending) {
+      // Rebuild cada segundo para actualizar el contador de tiempo
+      _ticker = Timer.periodic(const Duration(seconds: 1), (_) {
+        if (mounted) setState(() {});
+      });
+    }
+  }
+
+  @override
+  void dispose() {
+    _ticker?.cancel();
+    super.dispose();
+  }
+
+  bool _isUrgent(Order o) =>
+      o.status == OrderStatus.pending &&
+      DateTime.now().difference(o.createdAt).inSeconds >= 60;
+
+  String _elapsed(Order o) {
+    final d = DateTime.now().difference(o.createdAt);
+    if (d.inHours >= 1) return '${d.inHours}h ${d.inMinutes % 60}m';
+    if (d.inMinutes >= 1) return '${d.inMinutes}m ${d.inSeconds % 60}s';
+    return '${d.inSeconds}s';
+  }
+
+  bool _canAcceptOrders(Restaurant? restaurant) {
+    if (restaurant == null) return true;
+    if (restaurant.creditBalance > 0) return true;
+    // Same-day grace period
+    final negDate = restaurant.negativeBalanceDate;
+    if (negDate == null) return true;
+    final today = DateTime.now();
+    return negDate.year == today.year &&
+        negDate.month == today.month &&
+        negDate.day == today.day;
+  }
+
   Future<void> _updateStatus(String status) async {
     setState(() => _acting = true);
     try {
       await _fs.updateOrderStatus(widget.order.id, status);
+      // Deduct 1% commission when order is confirmed
+      if (status == 'confirmed') {
+        await _fs.deductCommission(
+            widget.restaurantUid, widget.order.subtotal);
+      }
     } catch (e) {
       if (mounted) {
         ScaffoldMessenger.of(context).showSnackBar(
@@ -268,7 +446,9 @@ class _OrderCardState extends State<_OrderCard> {
         borderRadius: BorderRadius.circular(18),
         boxShadow: cardShadow,
         border: o.status == OrderStatus.pending
-            ? Border.all(color: AppColors.warning, width: 1.5)
+            ? Border.all(
+                color: _isUrgent(o) ? AppColors.error : AppColors.warning,
+                width:  _isUrgent(o) ? 2.5 : 1.5)
             : null,
       ),
       child: Column(
@@ -299,10 +479,34 @@ class _OrderCardState extends State<_OrderCard> {
                     child: Column(
                       crossAxisAlignment: CrossAxisAlignment.start,
                       children: [
-                        Text(o.customerName,
-                            style: const TextStyle(
-                                fontWeight: FontWeight.w700,
-                                fontSize: 14)),
+                        Row(
+                          children: [
+                            Expanded(
+                              child: Text(o.customerName,
+                                  style: const TextStyle(
+                                      fontWeight: FontWeight.w700,
+                                      fontSize: 14)),
+                            ),
+                            if (widget.customerOrderCount > 1)
+                              Container(
+                                margin: const EdgeInsets.only(left: 6),
+                                padding: const EdgeInsets.symmetric(
+                                    horizontal: 7, vertical: 2),
+                                decoration: BoxDecoration(
+                                  color: AppColors.primary.withValues(alpha: 0.1),
+                                  borderRadius: BorderRadius.circular(20),
+                                ),
+                                child: Text(
+                                  '${widget.customerOrderCount} pedidos',
+                                  style: const TextStyle(
+                                    fontSize: 10,
+                                    fontWeight: FontWeight.w800,
+                                    color: AppColors.primary,
+                                  ),
+                                ),
+                              ),
+                          ],
+                        ),
                         const SizedBox(height: 2),
                         Row(
                           children: [
@@ -327,6 +531,26 @@ class _OrderCardState extends State<_OrderCard> {
                                   fontSize: 11,
                                   color: AppColors.textMuted),
                             ),
+                            if (o.status == OrderStatus.pending) ...[
+                              const SizedBox(width: 6),
+                              Container(
+                                padding: const EdgeInsets.symmetric(horizontal: 6, vertical: 2),
+                                decoration: BoxDecoration(
+                                  color: _isUrgent(o)
+                                      ? AppColors.error.withValues(alpha: 0.12)
+                                      : AppColors.warning.withValues(alpha: 0.12),
+                                  borderRadius: BorderRadius.circular(6),
+                                ),
+                                child: Text(
+                                  _elapsed(o),
+                                  style: TextStyle(
+                                    fontSize: 10,
+                                    fontWeight: FontWeight.w800,
+                                    color: _isUrgent(o) ? AppColors.error : AppColors.warning,
+                                  ),
+                                ),
+                              ),
+                            ],
                           ],
                         ),
                       ],
@@ -398,6 +622,20 @@ class _OrderCardState extends State<_OrderCard> {
 
                   const Divider(color: AppColors.border),
 
+                  // Envío
+                  if (o.deliveryFee > 0) ...[
+                    const SizedBox(height: 6),
+                    Row(
+                      mainAxisAlignment: MainAxisAlignment.spaceBetween,
+                      children: [
+                        const Text('Envío:',
+                            style: TextStyle(fontSize: 12, color: AppColors.textSecondary)),
+                        Text('\$${o.deliveryFee.toStringAsFixed(2)}',
+                            style: const TextStyle(fontSize: 12, color: AppColors.textSecondary)),
+                      ],
+                    ),
+                  ],
+
                   // Causa
                   Row(
                     mainAxisAlignment: MainAxisAlignment.spaceBetween,
@@ -451,6 +689,46 @@ class _OrderCardState extends State<_OrderCard> {
                     ),
                   ],
 
+                  // ── Chat button ──────────────────────────
+                  const SizedBox(height: 10),
+                  GestureDetector(
+                    onTap: () {
+                      final auth = context.read<AuthProvider>();
+                      Navigator.push(context, MaterialPageRoute(
+                        builder: (_) => OrderChatScreen(
+                          orderId:         o.id,
+                          currentUserId:   auth.user!.uid,
+                          currentUserRole: 'restaurant',
+                          currentUserName: o.restaurantName,
+                          otherPartyName:  o.customerName,
+                        ),
+                      ));
+                    },
+                    child: Container(
+                      width: double.infinity,
+                      height: 40,
+                      decoration: BoxDecoration(
+                        color: AppColors.primaryBg,
+                        borderRadius: BorderRadius.circular(12),
+                        border: Border.all(color: AppColors.primary.withValues(alpha: 0.3)),
+                      ),
+                      child: const Row(
+                        mainAxisAlignment: MainAxisAlignment.center,
+                        children: [
+                          Icon(Icons.chat_bubble_outline_rounded,
+                              color: AppColors.primary, size: 16),
+                          SizedBox(width: 6),
+                          Text('Chat con cliente',
+                              style: TextStyle(
+                                fontSize: 13,
+                                fontWeight: FontWeight.w700,
+                                color: AppColors.primary,
+                              )),
+                        ],
+                      ),
+                    ),
+                  ),
+
                   // ── Action buttons ───────────────────────
                   if (o.status == OrderStatus.pending ||
                       o.status == OrderStatus.confirmed) ...[
@@ -458,6 +736,8 @@ class _OrderCardState extends State<_OrderCard> {
                     _ActionButtons(
                       status: o.status,
                       acting: _acting,
+                      canAccept: _canAcceptOrders(widget.restaurant),
+                      restaurantUid: widget.restaurantUid,
                       onConfirm: () =>
                           _updateStatus('confirmed'),
                       onReady:   () => _updateStatus('ready'),
@@ -510,6 +790,8 @@ class _OrderCardState extends State<_OrderCard> {
 class _ActionButtons extends StatelessWidget {
   final OrderStatus status;
   final bool acting;
+  final bool canAccept;
+  final String restaurantUid;
   final VoidCallback onConfirm;
   final VoidCallback onReady;
   final VoidCallback onCancel;
@@ -517,6 +799,8 @@ class _ActionButtons extends StatelessWidget {
   const _ActionButtons({
     required this.status,
     required this.acting,
+    required this.canAccept,
+    required this.restaurantUid,
     required this.onConfirm,
     required this.onReady,
     required this.onCancel,
@@ -534,6 +818,76 @@ class _ActionButtons extends StatelessWidget {
     }
 
     if (status == OrderStatus.pending) {
+      // If restaurant is blocked, show a blocked message instead of confirm
+      if (!canAccept) {
+        return Column(
+          children: [
+            Container(
+              width: double.infinity,
+              padding: const EdgeInsets.all(12),
+              decoration: BoxDecoration(
+                color: AppColors.error.withValues(alpha: 0.08),
+                borderRadius: BorderRadius.circular(14),
+                border: Border.all(
+                    color: AppColors.error.withValues(alpha: 0.3)),
+              ),
+              child: const Row(
+                children: [
+                  Icon(Icons.block_rounded,
+                      color: AppColors.error, size: 18),
+                  SizedBox(width: 8),
+                  Expanded(
+                    child: Text(
+                      'Cuenta suspendida — recarga créditos para continuar',
+                      style: TextStyle(
+                        fontSize: 13,
+                        fontWeight: FontWeight.w600,
+                        color: AppColors.error,
+                      ),
+                    ),
+                  ),
+                ],
+              ),
+            ),
+            const SizedBox(height: 8),
+            GestureDetector(
+              onTap: () => Navigator.push(
+                context,
+                MaterialPageRoute(
+                  builder: (_) =>
+                      RestaurantCreditsScreen(uid: restaurantUid),
+                ),
+              ),
+              child: Container(
+                width: double.infinity,
+                height: 44,
+                decoration: BoxDecoration(
+                  color: AppColors.primary,
+                  borderRadius: BorderRadius.circular(14),
+                  boxShadow: primaryShadow,
+                ),
+                child: const Center(
+                  child: Row(
+                    mainAxisSize: MainAxisSize.min,
+                    children: [
+                      Icon(Icons.bolt_rounded,
+                          color: Colors.white, size: 18),
+                      SizedBox(width: 6),
+                      Text('Recargar créditos',
+                          style: TextStyle(
+                            fontSize: 14,
+                            fontWeight: FontWeight.w700,
+                            color: Colors.white,
+                          )),
+                    ],
+                  ),
+                ),
+              ),
+            ),
+          ],
+        );
+      }
+
       return Row(
         children: [
           // Cancelar

@@ -1,6 +1,7 @@
 import 'package:flutter/material.dart';
 import 'package:flutter/services.dart';
 import 'package:provider/provider.dart';
+import '../../core/config/app_flavor.dart';
 import '../../core/providers/auth_provider.dart';
 import '../../core/models/app_user.dart';
 import '../../core/theme/app_theme.dart';
@@ -17,7 +18,9 @@ class RegisterScreen extends StatefulWidget {
 
 class _RegisterScreenState extends State<RegisterScreen> {
   final _formKey = GlobalKey<FormState>();
-  UserRole _role = UserRole.restaurant;
+  final UserRole _role = FlavorConfig.flavor == AppFlavor.cause
+      ? UserRole.cause
+      : UserRole.restaurant;
   final _name = TextEditingController();
   final _email = TextEditingController();
   final _pass = TextEditingController();
@@ -83,38 +86,21 @@ class _RegisterScreenState extends State<RegisterScreen> {
           child: Column(
             crossAxisAlignment: CrossAxisAlignment.start,
             children: [
-              // Role selector
+              // Tipo de cuenta (fijo por flavor)
               Container(
+                width: double.infinity,
+                padding: const EdgeInsets.symmetric(horizontal: 16, vertical: 12),
                 decoration: BoxDecoration(
-                  color: AppColors.surface,
-                  borderRadius: BorderRadius.circular(18),
-                  boxShadow: cardShadow,
+                  color: AppColors.primary.withOpacity(0.1),
+                  borderRadius: BorderRadius.circular(12),
                 ),
-                padding: const EdgeInsets.all(4),
-                child: Row(
-                  children: UserRole.values.where((r) => r != UserRole.admin).map((role) {
-                    final selected = _role == role;
-                    return Expanded(
-                      child: GestureDetector(
-                        onTap: () => setState(() => _role = role),
-                        child: Container(
-                          height: 42,
-                          decoration: BoxDecoration(
-                            color: selected ? AppColors.primary : Colors.transparent,
-                            borderRadius: BorderRadius.circular(9),
-                          ),
-                          alignment: Alignment.center,
-                          child: Text(
-                            role == UserRole.restaurant ? '🍽 Restaurante' : '💚 Causa',
-                            style: TextStyle(
-                              fontSize: 13, fontWeight: FontWeight.w600,
-                              color: selected ? Colors.white : AppColors.textSecondary,
-                            ),
-                          ),
-                        ),
-                      ),
-                    );
-                  }).toList(),
+                child: Text(
+                  _role == UserRole.restaurant ? '🍽  Cuenta de restaurante' : '💚  Cuenta de causa social',
+                  style: const TextStyle(
+                    fontSize: 14,
+                    fontWeight: FontWeight.w600,
+                    color: AppColors.primary,
+                  ),
                 ),
               ),
               const SizedBox(height: 20),

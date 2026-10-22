@@ -1,4 +1,6 @@
+import 'dart:math';
 import 'package:flutter/material.dart';
+import 'package:geolocator/geolocator.dart';
 import 'package:provider/provider.dart';
 import '../../core/models/cause.dart';
 import '../../core/providers/auth_provider.dart';
@@ -20,20 +22,74 @@ class _CartScreenState extends State<CartScreen> {
   final _fs          = FirestoreService();
   final _msgCtrl     = TextEditingController();
   final _addressCtrl = TextEditingController();
+  final _phoneCtrl   = TextEditingController();
   bool _placing      = false;
+  double _deliveryFee = 0.0;
+  bool _calcingFee    = false;
 
   @override
   void initState() {
     super.initState();
-    _loadSavedAddress();
+    _loadSavedProfile();
+    WidgetsBinding.instance.addPostFrameCallback((_) => _calcDeliveryFee());
   }
 
-  Future<void> _loadSavedAddress() async {
+  double _haversineKm(double lat1, double lon1, double lat2, double lon2) {
+    const R = 6371.0;
+    final dLat = (lat2 - lat1) * pi / 180;
+    final dLon = (lon2 - lon1) * pi / 180;
+    final a = sin(dLat / 2) * sin(dLat / 2) +
+        cos(lat1 * pi / 180) * cos(lat2 * pi / 180) *
+        sin(dLon / 2) * sin(dLon / 2);
+    return R * 2 * atan2(sqrt(a), sqrt(1 - a));
+  }
+
+  Future<void> _calcDeliveryFee() async {
+    final cart = context.read<CartProvider>();
+    final restaurant = cart.restaurant;
+    if (restaurant == null || restaurant.deliveryTiers.isEmpty) return;
+    if (restaurant.latitude == null || restaurant.longitude == null) return;
+
+    setState(() => _calcingFee = true);
+    try {
+      bool enabled = await Geolocator.isLocationServiceEnabled();
+      if (!enabled) { if (mounted) setState(() => _calcingFee = false); return; }
+      var perm = await Geolocator.checkPermission();
+      if (perm == LocationPermission.denied) perm = await Geolocator.requestPermission();
+      if (perm == LocationPermission.denied || perm == LocationPermission.deniedForever) {
+        if (mounted) setState(() => _calcingFee = false);
+        return;
+      }
+      final pos = await Geolocator.getCurrentPosition(
+        locationSettings: const LocationSettings(accuracy: LocationAccuracy.medium));
+      final distKm = _haversineKm(
+          pos.latitude, pos.longitude,
+          restaurant.latitude!, restaurant.longitude!);
+
+      double fee = 0.0;
+      for (final tier in restaurant.deliveryTiers) {
+        if (distKm <= (tier['maxKm'] as num).toDouble()) {
+          fee = (tier['price'] as num).toDouble();
+          break;
+        }
+      }
+      if (mounted) setState(() { _deliveryFee = fee; _calcingFee = false; });
+    } catch (_) {
+      if (mounted) setState(() => _calcingFee = false);
+    }
+  }
+
+  Future<void> _loadSavedProfile() async {
     final auth = context.read<AuthProvider>();
     if (auth.user == null) return;
     final profile = await _fs.getCustomerProfile(auth.user!.uid);
-    if (profile != null && profile['deliveryAddress'] != null && mounted) {
-      _addressCtrl.text = profile['deliveryAddress'] as String;
+    if (profile != null && mounted) {
+      if (profile['deliveryAddress'] != null) {
+        _addressCtrl.text = profile['deliveryAddress'] as String;
+      }
+      if (profile['phone'] != null) {
+        _phoneCtrl.text = profile['phone'] as String;
+      }
     }
   }
 
@@ -41,6 +97,7 @@ class _CartScreenState extends State<CartScreen> {
   void dispose() {
     _msgCtrl.dispose();
     _addressCtrl.dispose();
+    _phoneCtrl.dispose();
     super.dispose();
   }
 
@@ -74,8 +131,12 @@ class _CartScreenState extends State<CartScreen> {
       final address = _addressCtrl.text.trim();
 
       // Save address to profile for next time
-      if (auth.user != null && address.isNotEmpty) {
-        _fs.updateCustomerProfile(auth.user!.uid, {'deliveryAddress': address});
+      final phone = _phoneCtrl.text.trim();
+      if (auth.user != null) {
+        _fs.updateCustomerProfile(auth.user!.uid, {
+          if (address.isNotEmpty) 'deliveryAddress': address,
+          if (phone.isNotEmpty) 'phone': phone,
+        });
       }
 
       final cause          = cart.selectedCause!;
@@ -89,11 +150,13 @@ class _CartScreenState extends State<CartScreen> {
         customerName:    auth.user?.name ?? 'Customer',
         customerId:      auth.user?.uid,
         customerEmail:   auth.user?.email,
+        customerPhone:   phone.isEmpty ? null : phone,
         notes:           msg.isEmpty ? null : msg,
         deliveryAddress: address.isEmpty ? null : address,
         items: cart.items.map((i) => i.toOrderItem().toMap()).toList(),
         subtotal:        cart.subtotal,
         donationAmount:  donationAmount,
+        deliveryFee:     _deliveryFee,
         causeMessage:    msg.isEmpty ? null : msg,
       );
 
@@ -204,6 +267,50 @@ class _CartScreenState extends State<CartScreen> {
                             decoration: InputDecoration(
                               hintText:
                                   'e.g. 123 Main St, Apt 4B, City',
+                              hintStyle: const TextStyle(
+                                  fontSize: 13,
+                                  color: AppColors.textMuted),
+                              filled: true,
+                              fillColor: AppColors.background,
+                              border: OutlineInputBorder(
+                                borderRadius: BorderRadius.circular(12),
+                                borderSide: BorderSide.none,
+                              ),
+                              contentPadding: const EdgeInsets.all(12),
+                            ),
+                          ),
+                        ),
+                      ],
+                    ),
+                  ),
+
+                  const SizedBox(height: 20),
+
+                  // ── Phone number ──────────────────────────────
+                  const Text('Teléfono de contacto',
+                      style: TextStyle(
+                          fontSize: 17, fontWeight: FontWeight.w800)),
+                  const SizedBox(height: 6),
+                  const Text(
+                    'Para que el restaurante pueda contactarte',
+                    style: TextStyle(
+                        fontSize: 12, color: AppColors.textSecondary),
+                  ),
+                  const SizedBox(height: 10),
+                  AppCard(
+                    padding: const EdgeInsets.all(14),
+                    child: Row(
+                      children: [
+                        const Icon(Icons.phone_rounded,
+                            color: AppColors.primary, size: 20),
+                        const SizedBox(width: 10),
+                        Expanded(
+                          child: TextField(
+                            controller: _phoneCtrl,
+                            keyboardType: TextInputType.phone,
+                            style: const TextStyle(fontSize: 14),
+                            decoration: InputDecoration(
+                              hintText: 'ej. +52 667 123 4567',
                               hintStyle: const TextStyle(
                                   fontSize: 13,
                                   color: AppColors.textMuted),
@@ -402,18 +509,36 @@ class _CartScreenState extends State<CartScreen> {
                             value: '\$${cart.subtotal.toStringAsFixed(2)}'),
                         const SizedBox(height: 10),
                         _SummaryRow(
-                          label:
-                              'Donation (${cart.restaurant?.donationPercentage.toStringAsFixed(0) ?? '5'}%)',
+                          label: 'Donation (${cart.restaurant?.donationPercentage.toStringAsFixed(0) ?? '5'}%)',
                           value: '\$${cart.donationAmount.toStringAsFixed(2)}',
                           valueColor: AppColors.primary,
                         ),
+                        if (_calcingFee) ...[
+                          const SizedBox(height: 10),
+                          const Row(children: [
+                            SizedBox(width: 12, height: 12,
+                                child: CircularProgressIndicator(strokeWidth: 2, color: AppColors.primary)),
+                            SizedBox(width: 8),
+                            Text('Calculando envío...',
+                                style: TextStyle(fontSize: 13, color: AppColors.textSecondary)),
+                          ]),
+                        ] else if (_deliveryFee > 0) ...[
+                          const SizedBox(height: 10),
+                          _SummaryRow(
+                            label: 'Envío a domicilio',
+                            value: '\$${_deliveryFee.toStringAsFixed(2)}',
+                          ),
+                        ] else if (cart.restaurant?.deliveryTiers.isNotEmpty == true) ...[
+                          const SizedBox(height: 10),
+                          const _SummaryRow(label: 'Envío a domicilio', value: 'Gratis'),
+                        ],
                         const Padding(
                           padding: EdgeInsets.symmetric(vertical: 12),
                           child: Divider(color: AppColors.border, height: 1),
                         ),
                         _SummaryRow(
                           label: 'Total',
-                          value: '\$${cart.subtotal.toStringAsFixed(2)}',
+                          value: '\$${(cart.subtotal + _deliveryFee).toStringAsFixed(2)}',
                           bold: true,
                         ),
                       ],

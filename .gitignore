@@ -42,3 +42,8 @@ Thumbs.db
 .idea/
 .vscode/
 *.iml
+
+# Generated web build and runtime logs
+.next/
+*.log
+

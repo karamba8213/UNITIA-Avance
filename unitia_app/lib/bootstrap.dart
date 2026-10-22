@@ -1,8 +1,12 @@
 import 'package:flutter/material.dart';
+import 'package:flutter_localizations/flutter_localizations.dart';
 import 'package:firebase_core/firebase_core.dart';
 import 'package:provider/provider.dart';
+import 'core/l10n/app_localizations.dart';
 
+import 'core/config/admin_config.dart';
 import 'core/config/app_flavor.dart';
+import 'core/models/app_user.dart';
 import 'core/providers/auth_provider.dart';
 import 'core/providers/cart_provider.dart';
 import 'core/services/notification_service.dart';
@@ -12,6 +16,7 @@ import 'screens/auth/login_screen.dart';
 import 'screens/restaurant/restaurant_home.dart';
 import 'screens/cause/cause_home.dart';
 import 'screens/customer/customer_login_screen.dart';
+import 'screens/admin/admin_password_screen.dart';
 import 'screens/customer/customer_home.dart';
 
 Future<void> bootstrap(AppFlavor flavor) async {
@@ -46,6 +51,13 @@ class UnitiaApp extends StatelessWidget {
           title: FlavorConfig.appName,
           debugShowCheckedModeBanner: false,
           theme: AppTheme.light,
+          localizationsDelegates: const [
+            AppLocalizations.delegate,
+            GlobalMaterialLocalizations.delegate,
+            GlobalWidgetsLocalizations.delegate,
+            GlobalCupertinoLocalizations.delegate,
+          ],
+          supportedLocales: AppLocalizations.supportedLocales,
           home: const _AuthGate(),
         ),
       ),
@@ -55,6 +67,13 @@ class UnitiaApp extends StatelessWidget {
 
 class _AuthGate extends StatelessWidget {
   const _AuthGate();
+
+  /// Rol esperado según el flavor activo.
+  UserRole get _expectedRole => switch (FlavorConfig.flavor) {
+        AppFlavor.restaurant => UserRole.restaurant,
+        AppFlavor.cause      => UserRole.cause,
+        AppFlavor.customer   => UserRole.customer,
+      };
 
   @override
   Widget build(BuildContext context) {
@@ -81,6 +100,31 @@ class _AuthGate extends StatelessWidget {
           ),
         ),
       );
+    }
+
+    // Admin → pantalla de contraseña (en cualquier flavor)
+    if (auth.user != null && auth.user!.email == AdminConfig.adminEmail) {
+      return const AdminPasswordScreen();
+    }
+
+    // Usuario autenticado pero con rol incorrecto → cerrar sesión
+    if (auth.user != null && auth.user!.role != _expectedRole) {
+      WidgetsBinding.instance.addPostFrameCallback((_) async {
+        await auth.signOut();
+        if (context.mounted) {
+          final l10n = AppLocalizations.of(context);
+          ScaffoldMessenger.of(context).showSnackBar(
+            SnackBar(
+              content: Text(l10n.authWrongRole(FlavorConfig.appName)),
+              backgroundColor: AppColors.error,
+              behavior: SnackBarBehavior.floating,
+              shape: RoundedRectangleBorder(borderRadius: BorderRadius.circular(12)),
+              margin: const EdgeInsets.all(16),
+            ),
+          );
+        }
+      });
+      return const Scaffold(backgroundColor: Colors.white);
     }
 
     return switch (FlavorConfig.flavor) {

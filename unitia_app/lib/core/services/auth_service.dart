@@ -129,7 +129,21 @@ class AuthService {
       return userDoc;
     }
 
-    return AppUser.fromMap(uid, doc.data()!);
+    final existing = AppUser.fromMap(uid, doc.data()!);
+    final newPhotoUrl = googleUser.photoUrl ?? existing.photoUrl;
+    final updates = <String, dynamic>{};
+    if (existing.role != role) updates['role'] = role.name;
+    if (newPhotoUrl != existing.photoUrl) updates['photoUrl'] = newPhotoUrl;
+    if (updates.isNotEmpty) {
+      await _db.collection('users').doc(uid).update(updates);
+    }
+    return AppUser(
+      uid: existing.uid,
+      email: existing.email,
+      name: existing.name,
+      role: role,
+      photoUrl: newPhotoUrl,
+    );
   }
 
   Future<void> signOut() async {

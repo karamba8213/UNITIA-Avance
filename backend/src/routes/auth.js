@@ -15,13 +15,13 @@ const registerSchema = z.object({
   email: z.string().email(),
   password: z.string().min(8),
   name: z.string().min(2),
-  role: z.enum(['RESTAURANT', 'CAUSE']),
+  role: z.enum(['RESTAURANT', 'CAUSE', 'CUSTOMER']),
   profile: z.object({
     name: z.string().optional(),
     description: z.string().optional(),
     address: z.string().optional(),
     phone: z.string().optional(),
-    donationPercentage: z.number().min(0).max(100).optional(),
+    donationPercentage: z.number().min(15).max(100).optional(),
     story: z.string().optional(),
     targetAmount: z.number().min(0).optional(),
   }).optional().default({}),
@@ -38,7 +38,7 @@ const oauthSchema = z.object({
   email: z.string().email(),
   name: z.string().optional(),
   image: z.string().optional(),
-  role: z.enum(['RESTAURANT', 'CAUSE']).optional(),
+  role: z.enum(['RESTAURANT', 'CAUSE', 'CUSTOMER']).optional(),
 })
 
 router.post('/register', limiter, async (req, res, next) => {

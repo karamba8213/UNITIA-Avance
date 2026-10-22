@@ -1,9 +1,12 @@
 import 'package:flutter/material.dart';
+import 'package:provider/provider.dart';
 import '../../core/models/order.dart';
+import '../../core/providers/auth_provider.dart';
 import '../../core/services/firestore_service.dart';
 import '../../core/theme/app_theme.dart';
 import '../../widgets/common/app_button.dart';
 import '../../widgets/common/app_card.dart';
+import '../shared/order_chat_screen.dart';
 
 class OrderStatusScreen extends StatelessWidget {
   final String orderId;
@@ -42,6 +45,48 @@ class _OrderView extends StatelessWidget {
   Widget build(BuildContext context) {
     final isPending   = order.status == OrderStatus.pending;
     final isConfirmed = order.status == OrderStatus.confirmed;
+    final isReady     = order.status == OrderStatus.ready;
+    final isCancelled = order.status == OrderStatus.cancelled;
+
+    final Color iconBg = isCancelled
+        ? Colors.grey.shade100
+        : isReady
+            ? AppColors.success.withValues(alpha: 0.1)
+            : isConfirmed
+                ? AppColors.primary.withValues(alpha: 0.1)
+                : AppColors.primaryBg;
+
+    final Color iconColor = isCancelled
+        ? AppColors.textMuted
+        : isReady
+            ? AppColors.success
+            : isConfirmed
+                ? AppColors.primary
+                : AppColors.primary;
+
+    final IconData iconData = isCancelled
+        ? Icons.cancel_rounded
+        : isReady
+            ? Icons.delivery_dining_rounded
+            : isConfirmed
+                ? Icons.restaurant_rounded
+                : Icons.hourglass_top_rounded;
+
+    final String title = isCancelled
+        ? 'Pedido cancelado'
+        : isReady
+            ? '¡Listo para entregar!'
+            : isConfirmed
+                ? '¡Pedido confirmado!'
+                : '¡Pedido enviado!';
+
+    final String subtitle = isCancelled
+        ? 'El restaurante canceló tu pedido.'
+        : isReady
+            ? 'Tu pedido está listo. El restaurante lo entregará pronto.'
+            : isConfirmed
+                ? 'Tu pedido está siendo preparado.'
+                : 'Esperando confirmación del restaurante.';
 
     return SingleChildScrollView(
       padding: const EdgeInsets.all(20),
@@ -52,31 +97,15 @@ class _OrderView extends StatelessWidget {
           // ── Status icon ──────────────────────────────────
           Container(
             width: 88, height: 88,
-            decoration: BoxDecoration(
-              color: isConfirmed
-                  ? AppColors.success.withValues(alpha: 0.1)
-                  : AppColors.primaryBg,
-              shape: BoxShape.circle,
-            ),
-            child: Icon(
-              isConfirmed
-                  ? Icons.check_circle_rounded
-                  : Icons.hourglass_top_rounded,
-              color: isConfirmed ? AppColors.success : AppColors.primary,
-              size: 48,
-            ),
+            decoration: BoxDecoration(color: iconBg, shape: BoxShape.circle),
+            child: Icon(iconData, color: iconColor, size: 48),
           ),
           const SizedBox(height: 20),
 
-          Text(
-            isConfirmed ? 'Order Confirmed!' : 'Order Placed!',
-            style: const TextStyle(fontSize: 24, fontWeight: FontWeight.w800),
-          ),
+          Text(title,
+              style: const TextStyle(fontSize: 24, fontWeight: FontWeight.w800)),
           const SizedBox(height: 8),
-          Text(
-            isPending
-                ? 'Waiting for the restaurant to confirm your order.'
-                : 'Your order is being prepared.',
+          Text(subtitle,
             style: const TextStyle(
                 fontSize: 14, color: AppColors.textSecondary, height: 1.5),
             textAlign: TextAlign.center,
@@ -124,17 +153,27 @@ class _OrderView extends StatelessWidget {
                   padding:
                       const EdgeInsets.symmetric(horizontal: 10, vertical: 5),
                   decoration: BoxDecoration(
-                    color: isPending
-                        ? AppColors.warning.withValues(alpha: 0.1)
-                        : AppColors.success.withValues(alpha: 0.1),
+                    color: isCancelled
+                        ? Colors.grey.shade100
+                        : isReady
+                            ? AppColors.success.withValues(alpha: 0.1)
+                            : isConfirmed
+                                ? AppColors.primary.withValues(alpha: 0.1)
+                                : AppColors.warning.withValues(alpha: 0.1),
                     borderRadius: BorderRadius.circular(20),
                   ),
                   child: Text(
-                    isPending ? 'Pending' : 'Confirmed',
+                    isCancelled ? 'Cancelado' : isReady ? 'Listo' : isConfirmed ? 'Confirmado' : 'Pendiente',
                     style: TextStyle(
                       fontSize: 11,
                       fontWeight: FontWeight.w700,
-                      color: isPending ? AppColors.warning : AppColors.success,
+                      color: isCancelled
+                          ? AppColors.textMuted
+                          : isReady
+                              ? AppColors.success
+                              : isConfirmed
+                                  ? AppColors.primary
+                                  : AppColors.warning,
                     ),
                   ),
                 ),
@@ -254,15 +293,24 @@ class _OrderView extends StatelessWidget {
                       ),
                     )),
                 const Divider(color: AppColors.border, height: 20),
+                if (order.deliveryFee > 0) ...[
+                  Row(
+                    mainAxisAlignment: MainAxisAlignment.spaceBetween,
+                    children: [
+                      const Text('Envío', style: TextStyle(fontSize: 13, color: AppColors.textSecondary)),
+                      Text('\$${order.deliveryFee.toStringAsFixed(2)}',
+                          style: const TextStyle(fontSize: 13, color: AppColors.textSecondary)),
+                    ],
+                  ),
+                  const SizedBox(height: 6),
+                ],
                 Row(
                   mainAxisAlignment: MainAxisAlignment.spaceBetween,
                   children: [
                     const Text('Total',
-                        style: TextStyle(
-                            fontSize: 15, fontWeight: FontWeight.w800)),
-                    Text('\$${order.subtotal.toStringAsFixed(2)}',
-                        style: const TextStyle(
-                            fontSize: 15, fontWeight: FontWeight.w800)),
+                        style: TextStyle(fontSize: 15, fontWeight: FontWeight.w800)),
+                    Text('\$${(order.subtotal + order.deliveryFee).toStringAsFixed(2)}',
+                        style: const TextStyle(fontSize: 15, fontWeight: FontWeight.w800)),
                   ],
                 ),
               ],
@@ -298,6 +346,32 @@ class _OrderView extends StatelessWidget {
           ),
 
           const SizedBox(height: 28),
+
+          // ── Chat con restaurante ──────────────────────────
+          Builder(builder: (ctx) {
+            final auth = ctx.read<AuthProvider>();
+            return OutlinedButton.icon(
+              onPressed: () => Navigator.push(ctx, MaterialPageRoute(
+                builder: (_) => OrderChatScreen(
+                  orderId:         order.id,
+                  currentUserId:   auth.user?.uid ?? '',
+                  currentUserRole: 'customer',
+                  currentUserName: order.customerName,
+                  otherPartyName:  order.restaurantName,
+                ),
+              )),
+              icon: const Icon(Icons.chat_bubble_outline_rounded, size: 18),
+              label: const Text('Chat con el restaurante'),
+              style: OutlinedButton.styleFrom(
+                minimumSize: const Size(double.infinity, 48),
+                foregroundColor: AppColors.primary,
+                side: const BorderSide(color: AppColors.primary),
+                shape: RoundedRectangleBorder(
+                    borderRadius: BorderRadius.circular(14)),
+              ),
+            );
+          }),
+          const SizedBox(height: 12),
 
           AppButton(
             label: 'Back to Home',

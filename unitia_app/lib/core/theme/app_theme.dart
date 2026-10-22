@@ -1,4 +1,5 @@
 import 'package:flutter/material.dart';
+import 'package:google_fonts/google_fonts.dart';
 
 // ─────────────────────────────────────────────────────────────────────────────
 // Design Tokens — Unitia Marketplace
@@ -77,7 +78,9 @@ List<BoxShadow> get primaryShadow => [
 // Theme
 // ─────────────────────────────────────────────────────────────────────────────
 class AppTheme {
-  static ThemeData get light => ThemeData(
+  static ThemeData get light {
+    final base = GoogleFonts.plusJakartaSansTextTheme();
+    return ThemeData(
         useMaterial3: true,
         colorScheme: ColorScheme.fromSeed(
           seedColor: AppColors.primary,
@@ -85,16 +88,15 @@ class AppTheme {
           surface: AppColors.surface,
         ),
         scaffoldBackgroundColor: AppColors.background,
-        fontFamily: 'Inter',
+        textTheme: base,
 
-        appBarTheme: const AppBarTheme(
+        appBarTheme: AppBarTheme(
           backgroundColor: AppColors.surface,
           foregroundColor: AppColors.textPrimary,
           elevation: 0,
           scrolledUnderElevation: 0,
           centerTitle: false,
-          titleTextStyle: TextStyle(
-            fontFamily: 'Inter',
+          titleTextStyle: GoogleFonts.plusJakartaSans(
             fontSize: 20,
             fontWeight: FontWeight.w800,
             color: AppColors.textPrimary,
@@ -146,10 +148,9 @@ class AppTheme {
             elevation: 0,
             minimumSize: const Size(double.infinity, 52),
             shape: RoundedRectangleBorder(borderRadius: BorderRadius.circular(16)),
-            textStyle: const TextStyle(
+            textStyle: GoogleFonts.plusJakartaSans(
               fontSize: 16,
               fontWeight: FontWeight.w700,
-              fontFamily: 'Inter',
             ),
           ),
         ),
@@ -160,10 +161,9 @@ class AppTheme {
             side: const BorderSide(color: AppColors.primary, width: 1.5),
             minimumSize: const Size(double.infinity, 52),
             shape: RoundedRectangleBorder(borderRadius: BorderRadius.circular(16)),
-            textStyle: const TextStyle(
+            textStyle: GoogleFonts.plusJakartaSans(
               fontSize: 16,
               fontWeight: FontWeight.w700,
-              fontFamily: 'Inter',
             ),
           ),
         ),
@@ -174,11 +174,10 @@ class AppTheme {
           indicatorColor: AppColors.primaryBg,
           labelTextStyle: WidgetStateProperty.resolveWith((states) {
             final active = states.contains(WidgetState.selected);
-            return TextStyle(
+            return GoogleFonts.plusJakartaSans(
               fontSize: 11,
               fontWeight: FontWeight.w700,
               color: active ? AppColors.primary : AppColors.textSecondary,
-              fontFamily: 'Inter',
               letterSpacing: 0.5,
             );
           }),
@@ -193,16 +192,6 @@ class AppTheme {
           labelBehavior: NavigationDestinationLabelBehavior.alwaysShow,
         ),
 
-        textTheme: const TextTheme(
-          displayLarge:   TextStyle(fontSize: 34, fontWeight: FontWeight.w800, color: AppColors.textPrimary, height: 1.1),
-          headlineLarge:  TextStyle(fontSize: 28, fontWeight: FontWeight.w800, color: AppColors.textPrimary, height: 1.2),
-          headlineMedium: TextStyle(fontSize: 22, fontWeight: FontWeight.w800, color: AppColors.textPrimary, height: 1.2),
-          titleLarge:     TextStyle(fontSize: 18, fontWeight: FontWeight.w700, color: AppColors.textPrimary),
-          titleMedium:    TextStyle(fontSize: 15, fontWeight: FontWeight.w600, color: AppColors.textPrimary),
-          titleSmall:     TextStyle(fontSize: 13, fontWeight: FontWeight.w600, color: AppColors.textPrimary),
-          bodyLarge:      TextStyle(fontSize: 15, fontWeight: FontWeight.w400, color: AppColors.textPrimary),
-          bodyMedium:     TextStyle(fontSize: 13, fontWeight: FontWeight.w400, color: AppColors.textSecondary),
-          bodySmall:      TextStyle(fontSize: 11, fontWeight: FontWeight.w400, color: AppColors.textMuted),
-        ),
-      );
+    );
+  }
 }

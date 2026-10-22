@@ -8,6 +8,7 @@ class AuthProvider extends ChangeNotifier {
   AppUser? _user;
   bool _loading = true;
   String? _error;
+  bool _directSignInInProgress = false;
 
   AppUser? get user => _user;
   bool get loading => _loading;
@@ -21,12 +22,18 @@ class AuthProvider extends ChangeNotifier {
 
   Future<void> _init() async {
     _service.authStateChanges.listen((firebaseUser) async {
+      // Don't interfere while a direct sign-in call is in progress —
+      // the caller sets _user directly with the correct role.
+      if (_directSignInInProgress) return;
       if (firebaseUser == null) {
         _user = null;
         _loading = false;
         notifyListeners();
       } else {
-        _user = await _service.getCurrentUser();
+        try {
+          final profile = await _service.getCurrentUser();
+          if (profile != null) _user = profile;
+        } catch (_) {}
         _loading = false;
         notifyListeners();
       }
@@ -72,15 +79,20 @@ class AuthProvider extends ChangeNotifier {
   }
 
   Future<bool> signInWithGoogle({UserRole role = UserRole.restaurant}) async {
+    _directSignInInProgress = true;
     _error = null;
     try {
       _user = await _service.signInWithGoogle(role: role);
+      _loading = false;
       notifyListeners();
       return true;
     } catch (e) {
       _error = _parseError(e.toString());
+      _loading = false;
       notifyListeners();
       return false;
+    } finally {
+      _directSignInInProgress = false;
     }
   }
 
@@ -91,12 +103,18 @@ class AuthProvider extends ChangeNotifier {
   }
 
   String _parseError(String raw) {
-    if (raw.contains('user-not-found') || raw.contains('wrong-password')) {
+    if (raw.contains('user-not-found') || raw.contains('wrong-password') ||
+        raw.contains('invalid-credential')) {
       return 'Email o contraseña incorrectos';
     }
     if (raw.contains('email-already-in-use')) return 'Ese email ya está registrado';
     if (raw.contains('weak-password')) return 'La contraseña es muy débil';
     if (raw.contains('network-request-failed')) return 'Sin conexión a internet';
-    return 'Ocurrió un error. Intentá de nuevo.';
+    if (raw.contains('operation-not-allowed')) {
+      return 'Inicio de sesión con email no está habilitado. Actívalo en Firebase Console → Authentication → Sign-in method.';
+    }
+    if (raw.contains('too-many-requests')) return 'Demasiados intentos. Espera unos minutos.';
+    if (raw.contains('user-disabled')) return 'Esta cuenta está deshabilitada.';
+    return 'Error: $raw';
   }
 }

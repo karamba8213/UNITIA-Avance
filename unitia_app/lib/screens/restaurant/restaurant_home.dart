@@ -11,6 +11,7 @@ import 'restaurant_menu_screen.dart';
 import 'restaurant_orders_screen.dart';
 import 'restaurant_donations_screen.dart';
 import 'restaurant_settings_screen.dart';
+import 'restaurant_credits_screen.dart';
 
 class RestaurantHome extends StatefulWidget {
   const RestaurantHome({super.key});
@@ -42,7 +43,7 @@ class _RestaurantHomeState extends State<RestaurantHome> {
     final screens = [
       _DashboardTab(uid: auth.user!.uid),
       RestaurantOrdersScreen(uid: auth.user!.uid),
-      RestaurantDonationsScreen(uid: auth.user!.uid),
+      RestaurantDonationsScreen(uid: auth.user!.uid, name: auth.user!.name),
       RestaurantMenuScreen(uid: auth.user!.uid),
       RestaurantSettingsScreen(uid: auth.user!.uid),
     ];
@@ -319,28 +320,41 @@ class _DashboardTabState extends State<_DashboardTab> {
                       style: TextStyle(fontSize: 17, fontWeight: FontWeight.w800),
                     ),
                     const SizedBox(height: 14),
-                    Row(children: [
-                      _QuickAction(
-                        icon: Icons.volunteer_activism,
-                        label: 'Donaciones',
-                        color: AppColors.accent,
-                        bg: AppColors.accentBg,
-                      ),
-                      const SizedBox(width: 12),
-                      _QuickAction(
-                        icon: Icons.qr_code_2_rounded,
-                        label: 'Mi QR',
-                        color: AppColors.info,
-                        bg: const Color(0xFFEFF6FF),
-                      ),
-                      const SizedBox(width: 12),
-                      _QuickAction(
-                        icon: Icons.share_rounded,
-                        label: 'Compartir',
-                        color: AppColors.success,
-                        bg: const Color(0xFFECFDF5),
-                      ),
-                    ]),
+                    StreamBuilder(
+                      stream: _fs.restaurantStream(widget.uid),
+                      builder: (ctx, snap) {
+                        final creditBalance =
+                            snap.data?.creditBalance ?? 0.0;
+                        return Row(children: [
+                          _QuickAction(
+                            icon: Icons.volunteer_activism,
+                            label: 'Donaciones',
+                            color: AppColors.accent,
+                            bg: AppColors.accentBg,
+                          ),
+                          const SizedBox(width: 12),
+                          _QuickAction(
+                            icon: Icons.bolt_rounded,
+                            label: 'Créditos',
+                            sub: '\$${creditBalance.toStringAsFixed(0)}',
+                            color: creditBalance > 0
+                                ? AppColors.success
+                                : AppColors.error,
+                            bg: creditBalance > 0
+                                ? const Color(0xFFE8F5E9)
+                                : const Color(0xFFFFEBEE),
+                            onTap: () => Navigator.push(
+                              ctx,
+                              MaterialPageRoute(
+                                builder: (_) => RestaurantCreditsScreen(
+                                  uid: widget.uid,
+                                ),
+                              ),
+                            ),
+                          ),
+                        ]);
+                      },
+                    ),
 
                     const SizedBox(height: 28),
 
@@ -400,21 +414,25 @@ class _DashboardTabState extends State<_DashboardTab> {
 class _QuickAction extends StatelessWidget {
   final IconData icon;
   final String label;
+  final String? sub;
   final Color color;
   final Color bg;
+  final VoidCallback? onTap;
 
   const _QuickAction({
     required this.icon,
     required this.label,
     required this.color,
     required this.bg,
+    this.sub,
+    this.onTap,
   });
 
   @override
   Widget build(BuildContext context) {
     return Expanded(
       child: GestureDetector(
-        onTap: () {},
+        onTap: onTap,
         child: Container(
           padding: const EdgeInsets.symmetric(vertical: 16),
           decoration: BoxDecoration(
@@ -433,6 +451,17 @@ class _QuickAction extends StatelessWidget {
                   color: color,
                 ),
               ),
+              if (sub != null) ...[
+                const SizedBox(height: 2),
+                Text(
+                  sub!,
+                  style: TextStyle(
+                    fontSize: 11,
+                    fontWeight: FontWeight.w600,
+                    color: color.withOpacity(0.8),
+                  ),
+                ),
+              ],
             ],
           ),
         ),

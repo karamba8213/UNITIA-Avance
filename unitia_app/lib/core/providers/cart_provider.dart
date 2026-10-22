@@ -30,10 +30,17 @@ class CartProvider extends ChangeNotifier {
   Restaurant? _restaurant;
   final List<CartItem> _items = [];
   Cause? _selectedCause;
+  String? _selectedCity;
 
   Restaurant? get restaurant => _restaurant;
   List<CartItem> get items => List.unmodifiable(_items);
   Cause? get selectedCause => _selectedCause;
+  String? get selectedCity => _selectedCity;
+
+  void setCity(String? city) {
+    _selectedCity = city;
+    notifyListeners();
+  }
 
   int get itemCount => _items.fold(0, (sum, i) => sum + i.quantity);
   bool get isEmpty => _items.isEmpty;

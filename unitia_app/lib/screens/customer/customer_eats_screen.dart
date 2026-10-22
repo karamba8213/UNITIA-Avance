@@ -2,6 +2,7 @@ import 'dart:math';
 import 'package:flutter/material.dart';
 import 'package:geolocator/geolocator.dart';
 import 'package:provider/provider.dart';
+import '../../core/l10n/app_localizations.dart';
 import '../../core/models/restaurant.dart';
 import '../../core/providers/cart_provider.dart';
 import '../../core/services/firestore_service.dart';
@@ -11,15 +12,15 @@ import '../../widgets/common/app_input.dart';
 import 'cart_screen.dart';
 import 'customer_restaurant_menu_screen.dart';
 
-// ── Categories (Rappi / Uber Eats style) ──────────────────────────────────────
+// dbValue = category stored in Firestore (Spanish); empty = "all"
 class _Category {
-  final String label;
+  final String dbValue;
   final String emoji;
-  const _Category(this.label, this.emoji);
+  const _Category(this.dbValue, this.emoji);
 }
 
 const _categories = [
-  _Category('Todo',        '🍽️'),
+  _Category('',            '🍽️'),
   _Category('Mexicana',    '🌮'),
   _Category('Hamburguesas','🍔'),
   _Category('Pizza',       '🍕'),
@@ -123,6 +124,7 @@ class _CustomerEatsScreenState extends State<CustomerEatsScreen> {
       _cities       = cities;
       _selectedCity = autoCity;
     });
+    if (autoCity != null) context.read<CartProvider>().setCity(autoCity);
     _applyFilters();
   }
 
@@ -169,15 +171,15 @@ class _CustomerEatsScreenState extends State<CustomerEatsScreen> {
   void _applyFilters() {
     if (!mounted) return;
     final q   = _searchCtrl.text.toLowerCase();
-    final cat = _categories[_catIndex].label;
+    final cat = _categories[_catIndex];
 
     List<Restaurant> list = _all.where((r) {
       // City filter
       final matchCity = _selectedCity == null ||
           (r.city ?? '').toLowerCase() == _selectedCity!.toLowerCase();
       // Category filter
-      final matchCat = cat == 'Todo' ||
-          (r.category ?? '').toLowerCase() == cat.toLowerCase();
+      final matchCat = cat.dbValue.isEmpty ||
+          (r.category ?? '').toLowerCase() == cat.dbValue.toLowerCase();
       // Search filter
       final matchText = q.isEmpty ||
           r.name.toLowerCase().contains(q) ||
@@ -216,16 +218,17 @@ class _CustomerEatsScreenState extends State<CustomerEatsScreen> {
               ),
             ),
             const SizedBox(height: 20),
-            const Text('Selecciona tu ciudad',
-                style: TextStyle(fontSize: 20, fontWeight: FontWeight.w800)),
+            Text(AppLocalizations.of(context).eatsSelectCity,
+                style: const TextStyle(fontSize: 20, fontWeight: FontWeight.w800)),
             const SizedBox(height: 16),
             // "Todas" option
             _CityOption(
-              city: 'Todas las ciudades',
+              city: AppLocalizations.of(context).eatsAllCities,
               icon: Icons.public_rounded,
               selected: _selectedCity == null,
               onTap: () {
                 setState(() => _selectedCity = null);
+                context.read<CartProvider>().setCity(null);
                 _applyFilters();
                 Navigator.pop(context);
               },
@@ -239,6 +242,7 @@ class _CustomerEatsScreenState extends State<CustomerEatsScreen> {
                 selected: _selectedCity == city,
                 onTap: () {
                   setState(() => _selectedCity = city);
+                  context.read<CartProvider>().setCity(city);
                   _applyFilters();
                   Navigator.pop(context);
                 },
@@ -253,6 +257,7 @@ class _CustomerEatsScreenState extends State<CustomerEatsScreen> {
   @override
   Widget build(BuildContext context) {
     final cart = context.watch<CartProvider>();
+    final l10n = AppLocalizations.of(context);
 
     return Scaffold(
       backgroundColor: AppColors.background,
@@ -284,8 +289,8 @@ class _CustomerEatsScreenState extends State<CustomerEatsScreen> {
                               const SizedBox(width: 4),
                               Text(
                                 _locLoading
-                                    ? 'Obteniendo ubicación...'
-                                    : _selectedCity ?? 'Todas las ciudades',
+                                    ? l10n.eatsGettingLocation
+                                    : _selectedCity ?? l10n.eatsAllCities,
                                 style: TextStyle(
                                   fontSize: 13,
                                   fontWeight: FontWeight.w700,
@@ -304,9 +309,17 @@ class _CustomerEatsScreenState extends State<CustomerEatsScreen> {
                         ),
                         // Cart icon
                         GestureDetector(
-                          onTap: () => Navigator.push(context,
-                              MaterialPageRoute(
-                                  builder: (_) => const CartScreen())),
+                          onTap: () {
+                            if (context.read<CartProvider>().selectedCause == null) {
+                              ScaffoldMessenger.of(context).showSnackBar(SnackBar(
+                                content: Text(l10n.eatsPickCauseFirst),
+                                backgroundColor: Colors.redAccent,
+                                behavior: SnackBarBehavior.floating,
+                              ));
+                              return;
+                            }
+                            Navigator.push(context, MaterialPageRoute(builder: (_) => const CartScreen()));
+                          },
                           child: Stack(
                             clipBehavior: Clip.none,
                             children: [
@@ -344,8 +357,8 @@ class _CustomerEatsScreenState extends State<CustomerEatsScreen> {
                     ),
 
                     const SizedBox(height: 12),
-                    const Text('Order & Donate',
-                        style: TextStyle(
+                    Text(l10n.eatsTitle,
+                        style: const TextStyle(
                             fontSize: 26,
                             fontWeight: FontWeight.w800,
                             height: 1.1)),
@@ -353,7 +366,7 @@ class _CustomerEatsScreenState extends State<CustomerEatsScreen> {
 
                     // Search bar
                     AppSearchBar(
-                      hint: 'Buscar restaurantes...',
+                      hint: l10n.eatsSearchHint,
                       controller: _searchCtrl,
                       onChanged: (_) => _applyFilters(),
                     ),
@@ -375,6 +388,13 @@ class _CustomerEatsScreenState extends State<CustomerEatsScreen> {
                   itemBuilder: (_, i) {
                     final cat      = _categories[i];
                     final selected = _catIndex == i;
+                    final catLabels = [
+                      l10n.catAll, l10n.catMexican, l10n.catBurgers,
+                      l10n.catPizza, l10n.catSushi, l10n.catAsian,
+                      l10n.catHealthy, l10n.catChicken, l10n.catSandwiches,
+                      l10n.catSeafood, l10n.catDesserts, l10n.catCoffee,
+                      l10n.catDrinks,
+                    ];
                     return GestureDetector(
                       onTap: () {
                         setState(() => _catIndex = i);
@@ -398,7 +418,7 @@ class _CustomerEatsScreenState extends State<CustomerEatsScreen> {
                                 style: const TextStyle(fontSize: 22)),
                             const SizedBox(height: 4),
                             Text(
-                              cat.label,
+                              catLabels[i],
                               style: TextStyle(
                                 fontSize: 11,
                                 fontWeight: FontWeight.w700,
@@ -425,7 +445,7 @@ class _CustomerEatsScreenState extends State<CustomerEatsScreen> {
                   child: Row(
                     children: [
                       Text(
-                        '${_filtered.length} restaurantes',
+                        l10n.eatsRestaurantsCount(_filtered.length),
                         style: const TextStyle(
                           fontSize: 13,
                           fontWeight: FontWeight.w700,
@@ -433,8 +453,8 @@ class _CustomerEatsScreenState extends State<CustomerEatsScreen> {
                         ),
                       ),
                       if (_selectedCity != null) ...[
-                        const Text(' en ',
-                            style: TextStyle(
+                        Text(' ${l10n.eatsIn} ',
+                            style: const TextStyle(
                                 fontSize: 13,
                                 color: AppColors.textSecondary)),
                         Text(_selectedCity!,
@@ -488,8 +508,8 @@ class _CustomerEatsScreenState extends State<CustomerEatsScreen> {
                       const SizedBox(height: 12),
                       Text(
                         _selectedCity != null
-                            ? 'No hay restaurantes en $_selectedCity'
-                            : 'No hay restaurantes en esta categoría',
+                            ? l10n.eatsNoRestaurantsCity(_selectedCity!)
+                            : l10n.eatsNoRestaurantsCategory,
                         style: const TextStyle(
                             color: AppColors.textSecondary,
                             fontSize: 14),
@@ -509,7 +529,7 @@ class _CustomerEatsScreenState extends State<CustomerEatsScreen> {
                               color: AppColors.primaryBg,
                               borderRadius: BorderRadius.circular(12),
                             ),
-                            child: const Text('Ver todas las ciudades',
+                            child: Text(l10n.eatsViewAllCities,
                                 style: TextStyle(
                                   fontSize: 13,
                                   fontWeight: FontWeight.w700,
@@ -548,8 +568,17 @@ class _CustomerEatsScreenState extends State<CustomerEatsScreen> {
               child: Padding(
                 padding: const EdgeInsets.fromLTRB(20, 0, 20, 12),
                 child: GestureDetector(
-                  onTap: () => Navigator.push(context,
-                      MaterialPageRoute(builder: (_) => const CartScreen())),
+                  onTap: () {
+                    if (context.read<CartProvider>().selectedCause == null) {
+                      ScaffoldMessenger.of(context).showSnackBar(SnackBar(
+                        content: Text(AppLocalizations.of(context).eatsPickCauseFirst),
+                        backgroundColor: Colors.redAccent,
+                        behavior: SnackBarBehavior.floating,
+                      ));
+                      return;
+                    }
+                    Navigator.push(context, MaterialPageRoute(builder: (_) => const CartScreen()));
+                  },
                   child: Container(
                     height: 56,
                     decoration: BoxDecoration(
@@ -575,8 +604,8 @@ class _CustomerEatsScreenState extends State<CustomerEatsScreen> {
                               )),
                         ),
                         const SizedBox(width: 12),
-                        const Expanded(
-                          child: Text('Ver carrito',
+                        Expanded(
+                          child: Text(AppLocalizations.of(context).eatsViewCart,
                               style: TextStyle(
                                 color: Colors.white,
                                 fontSize: 16,
@@ -792,7 +821,7 @@ class _RestaurantCard extends StatelessWidget {
                               child: Text(
                                 restaurant.description ??
                                     restaurant.address ??
-                                    'Restaurante local',
+                                    AppLocalizations.of(context).eatsLocalRestaurant,
                                 style: const TextStyle(
                                     fontSize: 12,
                                     color: AppColors.textSecondary),

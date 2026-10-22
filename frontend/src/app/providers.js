@@ -1,6 +1,17 @@
 'use client'
-import { SessionProvider } from 'next-auth/react'
+import { LocaleProvider } from '@/context/LocaleContext'
+import { CauseProvider } from '@/context/CauseContext'
+import CauseSelectorModal from '@/components/CauseSelectorModal'
+import GlobalBottomNav from '@/components/GlobalBottomNav'
 
 export default function Providers({ children }) {
-  return <SessionProvider>{children}</SessionProvider>
+  return (
+    <LocaleProvider>
+      <CauseProvider>
+        {children}
+        <CauseSelectorModal />
+        <GlobalBottomNav />
+      </CauseProvider>
+    </LocaleProvider>
+  )
 }

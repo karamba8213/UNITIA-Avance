@@ -8,6 +8,7 @@ import '../../core/models/cause.dart';
 import '../../widgets/common/donation_badge.dart';
 import '../../widgets/common/stat_card.dart';
 import '../auth/login_screen.dart';
+import '../shared/donation_chat_screen.dart';
 import 'cause_donations_screen.dart';
 import 'cause_settings_screen.dart';
 import 'cause_updates_screen.dart';
@@ -26,7 +27,7 @@ class _CauseHomeState extends State<CauseHome> {
     final auth = context.watch<AuthProvider>();
     final screens = [
       _CauseDashboardTab(uid: auth.user!.uid),
-      CauseDonationsScreen(uid: auth.user!.uid),
+      CauseDonationsScreen(uid: auth.user!.uid, name: auth.user!.name),
       CauseUpdatesScreen(uid: auth.user!.uid),
       CauseSettingsScreen(uid: auth.user!.uid),
     ];
@@ -341,11 +342,17 @@ class _CauseDashboardTabState extends State<_CauseDashboardTab> {
                         return Column(
                           children: donations.take(5).map((d) => _DonationCard(
                             donation: d,
-                            onConfirm: () async {
-                              await _fs.confirmDonationReceived(
-                                d['id'], d['orderId'], widget.uid,
-                              );
-                            },
+                            onTap: () => Navigator.push(
+                              ctx,
+                              MaterialPageRoute(
+                                builder: (_) => DonationChatScreen(
+                                  donationId: d['id'],
+                                  currentUserId: widget.uid,
+                                  currentUserRole: 'cause',
+                                  currentUserName: '',
+                                ),
+                              ),
+                            ),
                           )).toList(),
                         );
                       },
@@ -366,15 +373,17 @@ class _CauseDashboardTabState extends State<_CauseDashboardTab> {
 
 class _DonationCard extends StatelessWidget {
   final Map<String, dynamic> donation;
-  final VoidCallback onConfirm;
-  const _DonationCard({required this.donation, required this.onConfirm});
+  final VoidCallback onTap;
+  const _DonationCard({required this.donation, required this.onTap});
 
   @override
   Widget build(BuildContext context) {
     final amount = (donation['amount'] ?? 0.0).toDouble();
     final status = donation['status'] ?? 'pending';
 
-    return Container(
+    return GestureDetector(
+      onTap: onTap,
+      child: Container(
       margin: const EdgeInsets.only(bottom: 10),
       padding: const EdgeInsets.all(16),
       decoration: BoxDecoration(
@@ -421,32 +430,17 @@ class _DonationCard extends StatelessWidget {
               ),
               const SizedBox(height: 4),
               DonationBadge(status: status),
-              if (status == 'paid') ...[
-                const SizedBox(height: 8),
-                GestureDetector(
-                  onTap: onConfirm,
-                  child: Container(
-                    padding: const EdgeInsets.symmetric(horizontal: 12, vertical: 6),
-                    decoration: BoxDecoration(
-                      color: AppColors.success,
-                      borderRadius: BorderRadius.circular(20),
-                    ),
-                    child: const Text(
-                      'Confirmar recibo',
-                      style: TextStyle(
-                        color: Colors.white,
-                        fontSize: 11,
-                        fontWeight: FontWeight.w700,
-                      ),
-                    ),
-                  ),
-                ),
-              ],
+              const SizedBox(height: 6),
+              const Row(mainAxisSize: MainAxisSize.min, children: [
+                Icon(Icons.chat_bubble_outline_rounded, size: 11, color: AppColors.textMuted),
+                SizedBox(width: 3),
+                Text('Ver chat', style: TextStyle(fontSize: 11, color: AppColors.textMuted)),
+              ]),
             ],
           ),
         ],
       ),
-    );
+    ));
   }
 }
 

@@ -1,8 +1,11 @@
 import 'package:flutter/material.dart';
 import 'package:flutter/services.dart';
+import 'package:provider/provider.dart';
+import '../../core/providers/auth_provider.dart';
 import '../../core/services/firestore_service.dart';
 import '../../core/theme/app_theme.dart';
 import '../../widgets/common/app_button.dart';
+import '../../widgets/common/image_upload_widget.dart';
 
 class CauseSettingsScreen extends StatefulWidget {
   final String uid;
@@ -17,8 +20,17 @@ class _CauseSettingsScreenState extends State<CauseSettingsScreen> {
   final _descCtrl = TextEditingController();
   final _targetCtrl = TextEditingController();
   final _storyCtrl = TextEditingController();
+  final _bancoCtrl = TextEditingController();
+  final _titularCtrl = TextEditingController();
+  final _clabeCtrl = TextEditingController();
+  String? _logoUrl;
+  String _category = 'General';
   bool _loading = true;
   bool _saving = false;
+
+  static const _categories = [
+    'General', 'Educación', 'Alimentación', 'Medio ambiente', 'Salud', 'Animales',
+  ];
 
   @override
   void initState() {
@@ -34,6 +46,11 @@ class _CauseSettingsScreenState extends State<CauseSettingsScreen> {
         _descCtrl.text = cause.description;
         _targetCtrl.text = cause.targetAmount.toStringAsFixed(0);
         _storyCtrl.text = cause.story;
+        _logoUrl = cause.logo;
+        _category = cause.category;
+        _bancoCtrl.text = cause.bankInfo?['banco'] ?? '';
+        _titularCtrl.text = cause.bankInfo?['titular'] ?? '';
+        _clabeCtrl.text = cause.bankInfo?['clabe'] ?? '';
         _loading = false;
       });
     } else if (mounted) {
@@ -50,6 +67,13 @@ class _CauseSettingsScreenState extends State<CauseSettingsScreen> {
         'description': _descCtrl.text.trim(),
         'targetAmount': double.tryParse(_targetCtrl.text) ?? 0.0,
         'story': _storyCtrl.text.trim(),
+        if (_logoUrl != null) 'logo': _logoUrl,
+        'category': _category,
+        'bankInfo': {
+          'banco': _bancoCtrl.text.trim(),
+          'titular': _titularCtrl.text.trim(),
+          'clabe': _clabeCtrl.text.trim(),
+        },
       });
       if (mounted) {
         ScaffoldMessenger.of(context).showSnackBar(
@@ -72,6 +96,9 @@ class _CauseSettingsScreenState extends State<CauseSettingsScreen> {
     _descCtrl.dispose();
     _targetCtrl.dispose();
     _storyCtrl.dispose();
+    _bancoCtrl.dispose();
+    _titularCtrl.dispose();
+    _clabeCtrl.dispose();
     super.dispose();
   }
 
@@ -86,6 +113,25 @@ class _CauseSettingsScreenState extends State<CauseSettingsScreen> {
               child: Column(
                 crossAxisAlignment: CrossAxisAlignment.start,
                 children: [
+                  // ── Logo ──────────────────────────────────────
+                  Center(
+                    child: Column(
+                      children: [
+                        ImageUploadWidget(
+                          currentUrl: _logoUrl,
+                          storagePath: 'causes/${widget.uid}/logo',
+                          placeholder: Icons.volunteer_activism_rounded,
+                          onUploaded: (url) => setState(() => _logoUrl = url),
+                        ),
+                        const SizedBox(height: 8),
+                        const Text('Logo de la organización',
+                            style: TextStyle(
+                                fontSize: 12, color: AppColors.textSecondary)),
+                      ],
+                    ),
+                  ),
+                  const SizedBox(height: 16),
+
                   _Section(title: 'Información de la organización', children: [
                     _label('Nombre de la organización *'),
                     TextField(
@@ -100,6 +146,16 @@ class _CauseSettingsScreenState extends State<CauseSettingsScreen> {
                       maxLines: 2,
                       decoration: const InputDecoration(hintText: 'Breve descripción de tu organización...'),
                       style: const TextStyle(fontSize: 14),
+                    ),
+                  ]),
+
+                  _Section(title: 'Categoría', children: [
+                    _label('Categoría de tu organización'),
+                    DropdownButtonFormField<String>(
+                      value: _category,
+                      decoration: const InputDecoration(),
+                      items: _categories.map((c) => DropdownMenuItem(value: c, child: Text(c))).toList(),
+                      onChanged: (v) { if (v != null) setState(() => _category = v); },
                     ),
                   ]),
 
@@ -126,8 +182,41 @@ class _CauseSettingsScreenState extends State<CauseSettingsScreen> {
                     ),
                   ]),
 
+                  _Section(title: 'Datos para donaciones directas', children: [
+                    _label('Banco'),
+                    TextField(
+                      controller: _bancoCtrl,
+                      decoration: const InputDecoration(hintText: 'Ej. BBVA, Santander, Banamex'),
+                      style: const TextStyle(fontSize: 14),
+                    ),
+                    const SizedBox(height: 14),
+                    _label('Titular de la cuenta'),
+                    TextField(
+                      controller: _titularCtrl,
+                      decoration: const InputDecoration(hintText: 'Nombre completo del titular'),
+                      style: const TextStyle(fontSize: 14),
+                    ),
+                    const SizedBox(height: 14),
+                    _label('CLABE / No. de cuenta'),
+                    TextField(
+                      controller: _clabeCtrl,
+                      keyboardType: TextInputType.number,
+                      inputFormatters: [FilteringTextInputFormatter.digitsOnly],
+                      decoration: const InputDecoration(hintText: '18 dígitos'),
+                      style: const TextStyle(fontSize: 14, letterSpacing: 1),
+                    ),
+                  ]),
+
                   const SizedBox(height: 8),
                   AppButton(label: 'Guardar cambios', onPressed: _save, loading: _saving),
+                  const SizedBox(height: 12),
+                  AppButton(
+                    label: 'Cerrar sesión',
+                    onPressed: () async {
+                      await context.read<AuthProvider>().signOut();
+                    },
+                  ),
+                  const SizedBox(height: 24),
                 ],
               ),
             ),

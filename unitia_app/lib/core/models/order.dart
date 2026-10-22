@@ -45,6 +45,7 @@ class Order {
   final List<OrderItem> items;
   final double subtotal;
   final double donationAmount;
+  final double deliveryFee;
   final OrderStatus status;
   final DonationStatus donationStatus;
   final DateTime createdAt;
@@ -63,6 +64,7 @@ class Order {
     required this.items,
     required this.subtotal,
     required this.donationAmount,
+    this.deliveryFee = 0.0,
     required this.status,
     required this.donationStatus,
     required this.createdAt,
@@ -84,6 +86,7 @@ class Order {
             .toList(),
         subtotal: (m['subtotal'] ?? 0.0).toDouble(),
         donationAmount: (m['donationAmount'] ?? 0.0).toDouble(),
+        deliveryFee: (m['deliveryFee'] ?? 0.0).toDouble(),
         status: OrderStatus.values.firstWhere(
           (s) => s.name == m['status'],
           orElse: () => OrderStatus.pending,

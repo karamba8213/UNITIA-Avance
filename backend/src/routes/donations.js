@@ -37,10 +37,11 @@ router.patch('/:id/pay', authenticate, requireRole('RESTAURANT'), async (req, re
     const restaurant = await prisma.restaurant.findUnique({ where: { userId: req.user.id } })
     if (!restaurant) return res.status(404).json({ success: false, error: 'Restaurant not found' })
 
+    const { notes, paymentMethod, proofUrl } = req.body
     const donation = await donationService.markDonationPaid(
       req.params.id,
       restaurant.id,
-      req.body.notes
+      { notes, paymentMethod, proofUrl }
     )
     res.json({ success: true, data: donation })
   } catch (err) {
@@ -55,6 +56,20 @@ router.patch('/:id/confirm', authenticate, requireRole('CAUSE'), async (req, res
     if (!cause) return res.status(404).json({ success: false, error: 'Cause not found' })
 
     const donation = await donationService.confirmDonationReceived(req.params.id, cause.id)
+    res.json({ success: true, data: donation })
+  } catch (err) {
+    next(err)
+  }
+})
+
+// PATCH /donations/:id/dispute — cause disputes (did not receive payment)
+router.patch('/:id/dispute', authenticate, requireRole('CAUSE'), async (req, res, next) => {
+  try {
+    const cause = await prisma.cause.findUnique({ where: { userId: req.user.id } })
+    if (!cause) return res.status(404).json({ success: false, error: 'Cause not found' })
+
+    const { reason } = req.body
+    const donation = await donationService.disputeDonation(req.params.id, cause.id, { reason })
     res.json({ success: true, data: donation })
   } catch (err) {
     next(err)
